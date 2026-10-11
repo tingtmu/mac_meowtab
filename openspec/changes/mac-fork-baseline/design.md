@@ -9,7 +9,7 @@ See [proposal.md](proposal.md). Upstream is AltTab v11.9.0, a lightweight tag on
 | Project | `alt-tab-macos.xcodeproj`. Targets `alt-tab-macos` (the app) and `unit-tests`. Shared schemes `Debug`, `Release`, `Test`. |
 | Dependencies | Vendored local Swift packages only: `vendor/Sparkle` (2.9.1, dynamic), `vendor/ShortcutRecorder` (static), `vendor/AppCenter` (4.3.0 plus PLCrashReporter, static). No CocoaPods. |
 | Config | `config/base.xcconfig`: `PRODUCT_NAME = AltTab` (3), `PRODUCT_BUNDLE_IDENTIFIER = com.lwouis.alt-tab-macos` (4), `MACOSX_DEPLOYMENT_TARGET = 12.0` (9), `SWIFT_VERSION = 5.8` (10), warnings as errors (11). `config/release.xcconfig` signs as upstream's Developer ID (5). Both include `config/local.xcconfig` last, and `/config/local.xcconfig` is git-ignored. |
-| Version | `src/Info.plist` reads `$(CURRENT_PROJECT_VERSION)`, which no committed file sets; upstream CI writes it. |
+| Version | `Info.plist` (repo root) reads `$(CURRENT_PROJECT_VERSION)`, which no committed file sets; upstream CI writes it. |
 | SDK | The code calls macOS 26 APIs (`HelperExtensions.swift:280-281`), so it needs an Xcode 26 SDK. Upstream CI uses Xcode 26.0.1 on `macos-15`. |
 | Upstream CI | `.github/workflows/ci_cd.yml` runs on push to `master` only, in environment `production`. It uses 9 secrets and signs, notarizes, uploads symbols, updates the appcast and website, and publishes. |
 | Tests | `unit-tests` compiles a hand-picked list of production files plus `src/_test-support/Mocks.swift`. It has no test host and needs no signing or permissions. About 68 `*Tests.swift` files. |
@@ -71,7 +71,7 @@ Sparkle and AppCenter stay linked. The cuts below remove each path's starting po
 
 | Path | Cut |
 | --- | --- |
-| Sparkle | Delete `App.swift:564-575`, so `App.updaterController` stays nil. Every other use is optional-chained and becomes a no-op: `PreferencesEvents.swift:97-98`, `UserDefaultsEvents.swift:25-34`, `GeneralTab.swift:101-102`, `FeedbackWindow.swift:165,245`. Remove the updates rows (`GeneralTab.swift:24-26` and their layout) and the "Check for updates…" item (`Menubar.swift:40`). In `src/Info.plist`, delete `SUPublicEDKey` (61-62) and set `SUEnableAutomaticChecks` to false (63-64). |
+| Sparkle | Delete `App.swift:564-575`, so `App.updaterController` stays nil. Every other use is optional-chained and becomes a no-op: `PreferencesEvents.swift:97-98`, `UserDefaultsEvents.swift:25-34`, `GeneralTab.swift:101-102`, `FeedbackWindow.swift:165,245`. Remove the updates rows (`GeneralTab.swift:24-26` and their layout) and the "Check for updates…" item (`Menubar.swift:40`). In `Info.plist`, delete `SUPublicEDKey` (61-62) and set `SUEnableAutomaticChecks` to false (63-64). |
 | AppCenter | `App.swift:7` becomes `class App: NSApplication`. Delete `appCenterDelegate` (38) and its assignment (604). In `Info.plist`, set `NSPrincipalClass` to `NSApplication` (36-37) and delete the AppCenter keys (69-74). `App.shared.run()` (`main.swift:64`) is unaffected. |
 | Licence server | Covered by decision 4. Delete `application(_:open:)` and `handleCustomUrl` (`App.swift:677-702`); their only job is licence activation. Remove the Upgrade entry in Settings (`SettingsWindow.swift:319`, `536-553`) and the Get Pro, My Account and Support this project menu items (`Menubar.swift:46-49`). |
 | Feedback | Remove "Send feedback…" (`Menubar.swift:45`). The DEBUG-only `QaSurfaces.swift:398` may keep it. |

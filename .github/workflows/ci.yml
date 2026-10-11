@@ -15,21 +15,20 @@ jobs:
     outputs:
       zip: ${{ steps.package.outputs.zip }}
     env:
-      # Path to the built app. Renaming the app to MeowTab.app later is a change to this line only.
-      APP: DerivedData/Build/Products/Release/AltTab.app
+      APP: DerivedData/Build/Products/Release/MeowTab.app
     steps:
       - uses: actions/checkout@v7
       - run: sudo xcode-select -s /Applications/Xcode_26.0.1.app
       - name: Write config/local.xcconfig
         run: |
-          # CURRENT_PROJECT_VERSION: a later task replaces 0.0.0 with the contents of MEOWTAB_VERSION.
-          cat > config/local.xcconfig <<'EOF'
+          version=$(tr -d '[:space:]' < MEOWTAB_VERSION)
+          cat > config/local.xcconfig <<EOF
           CODE_SIGN_IDENTITY = -
           CODE_SIGN_STYLE = Manual
           DEVELOPMENT_TEAM =
           TEAM_ID =
           OTHER_CODE_SIGN_FLAGS = --deep --options runtime
-          CURRENT_PROJECT_VERSION = 0.0.0
+          CURRENT_PROJECT_VERSION = $version
           APPCENTER_SECRET =
           EOF
       - name: Build
@@ -43,6 +42,24 @@ jobs:
           echo "archs:$archs"
           [[ "$archs" == *" arm64 "* && "$archs" == *" x86_64 "* ]] || { echo "::error::expected arm64 and x86_64"; exit 1; }
           codesign --verify --deep --strict --verbose=2 "$APP"
+      - name: Check identity
+        run: |
+          plist="$APP/Contents/Info.plist"
+          expected_version=$(tr -d '[:space:]' < MEOWTAB_VERSION)
+          status=0
+          check() {
+            actual=$(/usr/libexec/PlistBuddy -c "Print :$1" "$plist" || true)
+            echo "$1 = $actual"
+            if [ "$actual" != "$2" ]; then
+              echo "::error::$1 is '$actual', expected '$2'"
+              status=1
+            fi
+          }
+          check CFBundleIdentifier io.github.tingtmu.meowtab.macos
+          check CFBundleName MeowTab
+          check CFBundleShortVersionString "$expected_version"
+          check LSMinimumSystemVersion 12.0
+          exit "$status"
       - name: Package
         id: package
         run: |
@@ -72,7 +89,7 @@ jobs:
             echo "arch $(uname -m)"
             xcodebuild -version
             echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       # -configuration Release mirrors upstream's scripts/run_tests.sh (the Test scheme itself defaults to Debug).
       - run: xcodebuild test -project alt-tab-macos.xcodeproj -scheme Test -configuration Release
 
@@ -85,8 +102,7 @@ jobs:
         os: [macos-15, macos-15-intel]
     runs-on: ${{ matrix.os }}
     env:
-      # Renaming the app to MeowTab later is a change to this line only.
-      APP_NAME: AltTab
+      APP_NAME: MeowTab
       ZIP: ${{ needs.build.outputs.zip }}
     steps:
       - uses: actions/download-artifact@v7

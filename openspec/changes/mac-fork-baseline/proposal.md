@@ -42,7 +42,7 @@ None.
 - **Build:** `config/base.xcconfig` (product name and bundle ID); a new `MEOWTAB_VERSION` file; a CI-written `config/local.xcconfig` (already git-ignored upstream); the product reference in `alt-tab-macos.xcodeproj/project.pbxproj` and `BuildableName` in the `Debug` and `Release` schemes.
 - **App code:**
   - `src/App.swift`: superclass, AppCenter and Sparkle start, licence URL handler, repository URL.
-  - `src/Info.plist`
+  - `Info.plist` (repo root)
   - `src/Menubar.swift`
   - `src/pro/license/LicenseManager.swift`
   - `src/preferences/settings-window/SettingsWindow.swift`

@@ -5,8 +5,10 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
 ## 1. Fork and a green baseline
 
 - [x] 1.1 Set up `main` as in design.md 1: remotes, `main` at `6d8940b5307d7348aaca70259c28147fc5ab00b3`, upstream's `CLAUDE.md` and `AGENTS.md` removed, `/CLAUDE.md` ignored, local excludes. Verify: `git merge-base --is-ancestor 6d8940b5307d7348aaca70259c28147fc5ab00b3 HEAD` succeeds; `git diff --stat 6d8940b5307d7348aaca70259c28147fc5ab00b3` lists only `openspec/`, `ROADMAP.md`, `.gitignore`, `project.pbxproj`, the two deletions and the workflow files of 1.2; `git check-ignore -q CLAUDE.md` succeeds.
-- [ ] 1.2 In the same commit, delete `.github/workflows/ci_cd.yml` and add `.github/workflows/ci.yml` with the `build` and `test` jobs of design.md 6. Push `main`, make it the default branch, and enable Actions. Verify: the first run on unmodified upstream code (still `AltTab.app`) builds a universal artifact, and the test jobs pass on `macos-15`, `macos-15-intel` and `macos-26`, each summary showing its OS, architecture and Xcode. Record the run URL as the baseline.
-- [ ] 1.3 Add the `launch` job (design.md 6), temporarily pointed at `AltTab.app`. Verify: on unmodified code the app stays running for 20 s with no internet sockets on both runners. This proves the check works before we rely on it.
+- [x] 1.2 In the same commit, delete `.github/workflows/ci_cd.yml` and add `.github/workflows/ci.yml` with the `build` and `test` jobs of design.md 6. Push `main`, make it the default branch, and enable Actions. Verify: the first run on unmodified upstream code (still `AltTab.app`) builds a universal artifact, and the test jobs pass on `macos-15`, `macos-15-intel` and `macos-26`, each summary showing its OS, architecture and Xcode. Record the run URL as the baseline.
+  - Baseline: https://github.com/tingtmu/mac_meowtab/actions/runs/38107403004 (`519fa39`): `lipo` `x86_64 arm64`, `codesign` valid; tests green on all three runners. The summary step now also prints to the log (`tee`), so later runs can be checked with `gh run view --log`.
+- [x] 1.3 Add the `launch` job (design.md 6), temporarily pointed at `AltTab.app`. Verify: on unmodified code the app stays running for 20 s with no internet sockets on both runners. This proves the check works before we rely on it.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38107508867 (`42be49a`): both launch jobs green; ad-hoc `AltTab.app` running after 20 s, no sockets, no crash report.
 
 ## 2. Identity and credit
 
@@ -38,7 +40,7 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
   - delete `App.swift:564-575`;
   - remove `GeneralTab.swift:24-26` and the layout rows that place them;
   - remove `Menubar.swift:40`;
-  - in `src/Info.plist`, delete `SUPublicEDKey` and set `SUEnableAutomaticChecks` to false.
+  - in `Info.plist`, delete `SUPublicEDKey` and set `SUEnableAutomaticChecks` to false.
 
   Verify: CI builds and tests pass (no warnings, as warnings are errors), and a `PlistBuddy` step confirms both keys.
 - [ ] 3.2 AppCenter (design.md 3):
