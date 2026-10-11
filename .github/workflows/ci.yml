@@ -190,3 +190,205 @@ jobs:
         if: always()
         run: |
           echo "launch on macOS $(sw_vers -productVersion) ($(uname -m)): running=${RUNNING:-no}, sockets=${SOCKETS:-n/a}" >> "$GITHUB_STEP_SUMMARY"
+
+  # Task 4.3's optional spike: it writes the runner's TCC.db to grant permissions, which is unproven, so it runs on manual dispatch only.
+  screenshot:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    continue-on-error: true
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    env:
+      APP_NAME: MeowTab
+      BUNDLE_ID: io.github.tingtmu.meowtab.macos
+      ZIP: ${{ needs.build.outputs.zip }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.build.outputs.zip }}
+      - name: Install
+        run: |
+          sudo ditto -x -k "$ZIP" /Applications
+          codesign -dv "/Applications/${APP_NAME}.app" || true
+          lipo -archs "/Applications/${APP_NAME}.app/Contents/MacOS/${APP_NAME}" || true
+          # The grants below are keyed on this exact bundle ID.
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/Applications/${APP_NAME}.app/Contents/Info.plist" || true
+          # The later steps start the executable itself and read its log from here.
+          echo "BIN=/Applications/${APP_NAME}.app/Contents/MacOS/${APP_NAME}" >> "$GITHUB_ENV"
+          echo "APP_LOG=$RUNNER_TEMP/meowtab.log" >> "$GITHUB_ENV"
+      - name: Inspect
+        run: |
+          sys_db="/Library/Application Support/com.apple.TCC/TCC.db"
+          user_db="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+          sw_vers || true
+          echo "arch $(uname -m)"
+          csrutil status || true
+          id || true
+          echo "--- process ancestry: TCC credits a child's access to its responsible ancestor ---"
+          p=$$
+          while [ "${p:-0}" -gt 1 ]; do
+            ps -ww -o pid=,ppid=,command= -p "$p" | cut -c1-200 || true
+            p=$(ps -o ppid= -p "$p" | tr -d ' ' || true)
+          done
+          echo "--- TCC directories and their flags ---"
+          ls -lOd "/Library/Application Support/com.apple.TCC" "$HOME/Library/Application Support/com.apple.TCC" || true
+          sudo ls -lO "/Library/Application Support/com.apple.TCC" || true
+          ls -lO "$HOME/Library/Application Support/com.apple.TCC" || true
+          for db in "$sys_db" "$user_db"; do
+            echo "=== $db ==="
+            # Root only for the system database: root reading the user's could leave root-owned files beside it.
+            if [ "$db" = "$sys_db" ]; then run_as=sudo; else run_as=; fi
+            $run_as test -f "$db" || { echo "(no such file)"; continue; }
+            echo "--- schema of access ---"
+            $run_as sqlite3 "$db" ".schema access" || true
+            echo "--- rows for Accessibility and Screen Recording ---"
+            $run_as sqlite3 -header -cmd ".mode quote" "$db" "SELECT * FROM access WHERE service IN ('kTCCServiceAccessibility', 'kTCCServiceScreenCapture') ORDER BY service, client;" || true
+            echo "--- every row, short ---"
+            $run_as sqlite3 "$db" "SELECT service, client, client_type, auth_value, auth_reason FROM access ORDER BY service, client;" || true
+          done
+      - name: Grant
+        run: |
+          sys_db="/Library/Application Support/com.apple.TCC/TCC.db"
+          now="CAST(strftime('%s','now') AS INTEGER)"
+          # The columns this macOS's access table has, in order.
+          cols=$(sudo sqlite3 "$sys_db" "PRAGMA table_info(access);" | cut -d'|' -f2 | tr '\n' ' ' || true)
+          echo "access columns: $cols"
+          if [ -z "$cols" ]; then
+            echo "::error::can't read the system TCC.db, so there is nothing to grant (SIP, or no Full Disk Access for sudo's responsible process?)"
+            exit 1
+          fi
+          # tcc_insert VERB SERVICE CLIENT CLIENT_TYPE writes one row shaped like the runner image's own: auth_value 2 is allowed,
+          # auth_reason 4 is set by the system, csreq is NULL. Each column the table has gets a value here; a column this
+          # script doesn't know is left to the table's default, and the insert fails and says so if it has none.
+          tcc_insert() {
+            local names="" values="" col val sql
+            for col in $cols; do
+              case $col in
+                service) val="'$2'" ;;
+                client) val="'$3'" ;;
+                client_type) val=$4 ;;
+                auth_value) val=2 ;;
+                auth_reason) val=4 ;;
+                auth_version) val=1 ;;
+                indirect_object_identifier_type|flags) val=0 ;;
+                indirect_object_identifier|boot_uuid) val="'UNUSED'" ;;
+                csreq|policy_id|indirect_object_code_identity|pid|pid_version) val=NULL ;;
+                last_modified|last_reminded) val=$now ;;
+                *) continue ;;
+              esac
+              names="$names${names:+, }$col"
+              values="$values${values:+, }$val"
+            done
+            sql="$1 INTO access ($names) VALUES ($values);"
+            echo "+ $sql"
+            sudo sqlite3 -cmd ".timeout 5000" "$sys_db" "$sql"
+          }
+          status=0
+          tcc_insert "INSERT OR REPLACE" kTCCServiceAccessibility "$BUNDLE_ID" 0 || status=1
+          tcc_insert "INSERT OR REPLACE" kTCCServiceScreenCapture "$BUNDLE_ID" 0 || status=1
+          # The tools that take the screenshot, unless the image already has a row for them.
+          for tool in /usr/sbin/screencapture /bin/bash; do
+            tcc_insert "INSERT OR IGNORE" kTCCServiceScreenCapture "$tool" 1 || true
+          done
+          echo "--- restart tccd ---"
+          sudo pkill -9 tccd || true
+          sleep 2
+          echo "--- rows now ---"
+          sudo sqlite3 -header -cmd ".mode quote" "$sys_db" "SELECT * FROM access WHERE service IN ('kTCCServiceAccessibility', 'kTCCServiceScreenCapture') ORDER BY service, client;" || true
+          exit "$status"
+      - name: Launch
+        run: |
+          touch "$RUNNER_TEMP/launch-time"
+          # The peek's timing line is debug-level, which the unified log keeps only while the subsystem asks for it.
+          # Same for tccd, whose log says which process it took to be asking, and what it answered.
+          sudo log config --subsystem "$BUNDLE_ID" --mode "level:debug,persist:debug" || true
+          sudo log config --subsystem com.apple.TCC --mode "level:debug,persist:debug" || true
+          sudo log config --status --subsystem "$BUNDLE_ID" || true
+          # The executable itself, so its stdout goes straight to the log file. A file makes stdout block-buffered, which
+          # would hold the log back until the app exits, so a pty (line-buffered) is put between them where python3 can.
+          if command -v python3 >/dev/null 2>&1; then
+            python3 -c 'import pty, sys; pty.spawn(sys.argv[1:])' "$BIN" --logs=info > "$APP_LOG" 2>&1 < /dev/null &
+          else
+            echo "::warning::no python3, so no pty: the app's log stays buffered until it exits"
+            "$BIN" --logs=info > "$APP_LOG" 2>&1 < /dev/null &
+          fi
+          sleep 15
+          echo "--- pgrep -x $APP_NAME ---"
+          pid=$(pgrep -x "$APP_NAME" | head -n 1 || true)
+          if [ -n "$pid" ]; then
+            echo "pid $pid"
+            ps -ww -o pid,ppid,etime,command -p "$pid" || true
+          else
+            echo "(not running)"
+          fi
+          echo "--- $APP_LOG, colours and carriage returns stripped ---"
+          ls -l "$APP_LOG" || true
+          perl -pe 's/\r//g; s/\e\[[0-9;]*m//g' "$APP_LOG" | tail -n 150 || true
+          for line in "Launching AltTab" "System permissions are granted; continuing launch" "Finished launching AltTab"; do
+            if grep -q "$line" "$APP_LOG"; then echo "log has: $line"; else echo "::warning::log lacks: $line"; fi
+          done
+          echo "--- crash reports since launch ---"
+          find ~/Library/Logs/DiagnosticReports /Library/Logs/DiagnosticReports -maxdepth 1 -type f \
+            -name "${APP_NAME}*" \( -name '*.ips' -o -name '*.crash' \) -newer "$RUNNER_TEMP/launch-time" 2>/dev/null || true
+          if [ -z "$pid" ]; then
+            echo "::error::$APP_NAME is not running 15s after launch"
+            exit 1
+          fi
+      - name: Windows
+        run: |
+          docs="$RUNNER_TEMP/peek-docs"
+          mkdir -p "$docs"
+          for i in 1 2 3; do echo "MeowTab peek window $i" > "$docs/window-$i.txt"; done
+          open -a TextEdit "$docs/window-1.txt" "$docs/window-2.txt" "$docs/window-3.txt"
+          sleep 5
+          echo "--- TextEdit ---"
+          pgrep -lx TextEdit || echo "(not running)"
+          # Apple Events may be denied, or wait on a consent prompt that nobody answers, so give them 10 s.
+          osascript -e 'with timeout of 10 seconds' -e 'tell application "TextEdit" to count windows' -e 'end timeout' || true
+          echo "--- what $APP_NAME sees (--list) ---"
+          "$BIN" --list || true
+      - name: Show and capture
+        run: |
+          status=0
+          echo "--- show the switcher at $(date '+%H:%M:%S') ---"
+          "$BIN" --show=0 || { echo "::error::--show=0 failed, so there is no switcher to capture"; status=1; }
+          sleep 2
+          screencapture -x "$RUNNER_TEMP/peek.png" || { echo "::error::screencapture failed"; status=1; }
+          sleep 1
+          screencapture -x "$RUNNER_TEMP/peek-2.png" || { echo "::error::the second screencapture failed"; status=1; }
+          echo "--- what $APP_NAME says while the switcher is open (--qa-state) ---"
+          "$BIN" --qa-state | jq -c '{
+            switcherVisible, selectedIndex, frontmostApp, layout,
+            screens: [.screens[]? | {frame, isPreferred}],
+            tiles: [.tiles[]? | {app, title, x, y, w, h}],
+            windows: [.windows[]? | {app, title, shown, minimized}]
+          }' || true
+          echo "--- hide the switcher at $(date '+%H:%M:%S') ---"
+          "$BIN" --hide || true
+          echo "--- screenshots ---"
+          ls -l "$RUNNER_TEMP/peek.png" "$RUNNER_TEMP/peek-2.png" || true
+          sips -g pixelWidth -g pixelHeight "$RUNNER_TEMP/peek.png" || true
+          sleep 2
+          echo "--- unified log, category peek ---"
+          log show --style compact --last 3m --debug --predicate 'category == "peek"' || true
+          echo "--- tccd: who it took to be asking, and its answers (newest 40) ---"
+          tcc_lines='subsystem == "com.apple.TCC" AND (eventMessage CONTAINS "AUTHREQ_ATTRIBUTION" OR eventMessage CONTAINS "AUTHREQ_RESULT")'
+          log show --style compact --last 5m --info --debug --predicate "$tcc_lines" | tail -n 40 || true
+          echo "--- tail of $APP_LOG ---"
+          perl -pe 's/\r//g; s/\e\[[0-9;]*m//g' "$APP_LOG" | tail -n 100 || true
+          exit "$status"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: peek-screenshot-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/peek.png
+            ${{ runner.temp }}/peek-2.png
+            ${{ runner.temp }}/meowtab.log
+      - name: Quit
+        if: always()
+        run: pkill -x "$APP_NAME" || true
