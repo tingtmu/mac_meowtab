@@ -77,6 +77,28 @@ jobs:
           name: ${{ env.ZIP }}
           path: ${{ env.ZIP }}
 
+  # Release never compiles DEBUG-only code (`#if DEBUG`, src/debug/, QA files), and warnings are errors, so compile Debug too.
+  build-debug:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - run: sudo xcode-select -s /Applications/Xcode_26.0.1.app
+      - name: Write config/local.xcconfig
+        run: |
+          version=$(tr -d '[:space:]' < MEOWTAB_VERSION)
+          cat > config/local.xcconfig <<EOF
+          CODE_SIGN_IDENTITY = -
+          CODE_SIGN_STYLE = Manual
+          DEVELOPMENT_TEAM =
+          TEAM_ID =
+          OTHER_CODE_SIGN_FLAGS = --deep --options runtime
+          CURRENT_PROJECT_VERSION = $version
+          EOF
+      - name: Build Debug
+        run: |
+          xcodebuild -project alt-tab-macos.xcodeproj -scheme Debug -configuration Debug \
+            -destination 'generic/platform=macOS' -derivedDataPath DerivedData build
+
   test:
     strategy:
       fail-fast: false
