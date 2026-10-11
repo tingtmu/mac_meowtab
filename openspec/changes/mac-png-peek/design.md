@@ -191,7 +191,7 @@ The user-facing messages:
 
 ### 8. The MeowTab settings section
 
-- **Registration.** `SettingsSectionDefinition(id: "meowtab", title: "MeowTab", symbol: .circledStar, builder: MeowTabSettingsTab.initTab, registerDynamicSearchContent: nil)` is the first entry of `sectionDefinitions()`. `MeowTabSettingsTab.cleanup()` is added to both cleanup lists. `.circledStar` is an existing glyph, which avoids regenerating the font subset.
+- **Registration.** `SettingsSectionDefinition(id: "meowtab", title: "MeowTab", symbol: .circledStar, builder: MeowTabSettingsTab.initTab, registerDynamicSearchContent: nil)` is the first entry of `sectionDefinitions()`. `MeowTabSettingsTab.cleanup()` is added to both cleanup lists. `.circledStar` is an existing glyph, which avoids regenerating the font subset. Being first, MeowTab is also the section Settings opens on (it selects `visibleSections[0]` by default, `SettingsWindow.swift:1191` at the baseline's HEAD); that is intended. Onboarding opens Appearance by its id, so it is unaffected.
 - **Layout.** Rows built like `GeneralTab`'s:
   1. **Pictures.** Three `PictureCard` views, one per mood. Each has:
      - a 96×96 `NSImageView` that accepts `.fileURL` drops;
@@ -245,7 +245,7 @@ All fixtures are generated at runtime into a fresh folder under `FileManager.def
 
 Hand-edit the file and copy existing entries:
 
-- **Files in both targets:** copy `Screens.swift`'s four kinds of entry: `PBXFileReference`, two `PBXBuildFile`s, the group child, and the two Sources phases.
+- **Files in both targets:** copy `SearchDiscoveryPanel.swift`'s four kinds of entry: `PBXFileReference`, two `PBXBuildFile`s, the group child, and the two Sources phases (app `D04BAD01F4BCEDF8B539AFD2`, unit-tests `BF0C80F58922E3C39A30CC58`). `Screens.swift` is app-only, so it is not a template for these.
 - **App-only files:** copy an app-only file such as `TilesPanel.swift`.
 - **Pictures:** copy `app.png` in the Resources phase.
 - **Group:** add a `meowtab` group under the `src` group.

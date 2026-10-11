@@ -1,6 +1,6 @@
 # Tasks
 
-Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into the project once, so later tasks never touch `project.pbxproj`. Groups 2–3 are pure logic, written test-first and fully checked by CI. Groups 4–5 are UI that CI can only build; their behaviour goes on the acceptance list, `docs/acceptance.md` (started by `mac-fork-baseline`), which the tester works through in `mac-preview-release`. Every task ends with green build, test and launch jobs; record each task's run URL under it.
+Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into the project once, so later tasks never touch `project.pbxproj`. Groups 2–3 are pure logic, written test-first and fully checked by CI. Groups 4–5 are UI that CI can only build; their behaviour goes on the acceptance list, `docs/acceptance.md` (started by `mac-fork-baseline`), which the tester works through in `mac-preview-release`. Every task ends with green `build`, `build-debug`, `test` and `launch` jobs; record each task's run URL under it. The `launch` job stops at the permission screen, so it never reaches `PeekController.setUp()`; it proves only that the app still starts. Upstream line numbers in `src/App.swift` and `SettingsWindow.swift` moved in `mac-fork-baseline` (for example the `App.swift:527` hook, `_ = TilesPanel()`, is now at `:512`); re-locate by symbol.
 
 ## 1. Skeleton
 
@@ -8,7 +8,7 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
   - the three test files' tests run on all three runners;
   - a new `build` step lists `MeowTab.app/Contents/Resources/chill_{few,some,many}.png`;
   - `shasum -a 256` of those files matches the Windows copies, with the expected hashes written in the step.
-- [ ] 1.2 Add the cat pictures' MIT notice ("Copyright (c) 2026 tingwei") to `docs/acknowledgments.md` and a line to `NOTICE.md`. Verify by reading both.
+- [ ] 1.2 Add the cat pictures' MIT notice ("Copyright (c) 2026 tingwei") to `docs/acknowledgments.md`, and a `### mac-png-peek` section to `NOTICE.md`'s Modifications, in the style of the `mac-fork-baseline` section. Verify by reading both.
 
 ## 2. Mood and geometry (test-first)
 
@@ -34,11 +34,11 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
   - `git diff 6d8940b5307d7348aaca70259c28147fc5ab00b3 -- src/switcher/main-window/TilesPanel.swift` shows only the marked lines.
 
   Add these to the acceptance list (`mood-peek` spec): picture placement, the scrolled grid with placeholders, typing a search, closing a window while open, Esc-and-reopen, a click on the picture, VoiceOver, two displays, fullscreen Space, and the timing log.
-- [ ] 4.3 (optional, time-boxed to 3 hours) The CI screenshot spike of design.md 11, as a separate `workflow_dispatch` job. Verify: either a screenshot artifact shows the peek above a 3-window switcher, or this task records which step failed and the job is removed.
+- [ ] 4.3 (optional, time-boxed to 3 hours) The CI screenshot spike of design.md 11, as a separate job that runs only on manual dispatch (`if: github.event_name == 'workflow_dispatch'`). Verify: either a screenshot artifact shows the peek above a 3-window switcher, or this task records which step failed and the job is removed.
 
 ## 5. MeowTab settings section
 
-- [ ] 5.1 `MeowTabSettingsTab`: the section entry and both cleanup calls in `SettingsWindow.swift` (design.md 8); the steppers, sliders, Restore defaults and the message line, wired to `MeowTabStore` and `PeekController.reload`. Verify: CI builds. Add the "First use", "Pushing a threshold" and "Restore defaults" scenarios of the `peek-settings` spec to the acceptance list.
+- [ ] 5.1 `MeowTabSettingsTab`: the section entry and both cleanup calls in `SettingsWindow.swift` (design.md 8); the steppers, sliders, Restore defaults and the message line, wired to `MeowTabStore` and `PeekController.reload`. Verify: CI builds. Add the "First use", "Pushing a threshold" and "Restore defaults" scenarios of the `peek-settings` spec to the acceptance list, and add MeowTab to the section list in the existing "offline-app | Settings window" row.
 - [ ] 5.2 `PictureCard`: Choose… (`NSOpenPanel`, PNG only), drop target, Use default, background import, and the error messages of design.md 6. Verify: CI builds. Add every `peek-settings` import and storage scenario to the acceptance list.
 
 ## 6. Docs and close
