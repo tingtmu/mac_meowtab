@@ -22,8 +22,6 @@ class App: NSApplication {
 
     override class var shared: App { super.shared as! App }
     static var supportProjectAction: Selector { #selector(App.supportProject) }
-    static var upgradeToProAction: Selector { #selector(App.upgradeToPro) }
-    static var openAccountAction: Selector { #selector(App.openAccount) }
     static var isTerminating = false
     private static var isVeryFirstSummon = true
     /// How long the panel waits for the launch inventory when the very first summon arrives before it
@@ -47,8 +45,8 @@ class App: NSApplication {
     }
 
     /// we put application code here which should be executed on init() and Preferences change
-    /// The switcher UI only exists once permissions are granted. Activating a license through the
-    /// `alt-tab://activate` url launches the app and can land its callback before that, so we bail
+    /// The switcher UI only exists once permissions are granted. The license state callback runs from
+    /// `LicenseManager.shared.initialize()` at launch, before that, so we bail
     /// instead of resetting a UI that isn't built yet (`TilesView.reset` traps on `TilesPanel.shared`).
     static func resetPreferencesDependentComponents() {
         guard TilesPanel.shared != nil else { return }
@@ -139,10 +137,6 @@ class App: NSApplication {
 
     @objc static func upgradeToPro() {
         ProTransitionManager.openCheckout()
-    }
-
-    @objc static func openAccount() {
-        UpgradeTab.openAccountPage()
     }
 
     @objc static func showFeedbackPanel() {
@@ -652,33 +646,6 @@ extension App: NSApplicationDelegate {
         LicenseManager.shared.initialize()
         #endif
         SystemPermissions.ensurePermissionsAreGranted()
-    }
-
-    func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls {
-            if url.scheme == App.bundleIdentifier {
-                handleCustomUrl(url)
-            }
-        }
-    }
-
-    private func handleCustomUrl(_ url: URL) {
-        guard url.host == "activate",
-              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let licenseKey = components.queryItems?.first(where: { $0.name == "license_key" })?.value,
-              !licenseKey.isEmpty else {
-            return
-        }
-        UpgradeTab.showAutoActivating()
-        LicenseManager.shared.activate(licenseKey) { result in
-            switch result {
-            case .success:
-                UpgradeTab.showAutoActivationSuccess()
-                App.resetPreferencesDependentComponents()
-            case .failure:
-                UpgradeTab.showAutoActivationFailed(licenseKey)
-            }
-        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

@@ -451,19 +451,6 @@ class UpgradeTab {
         App.showSettingsWindow()
         SettingsWindow.shared?.showUpgradeView()
     }
-
-    static func showAutoActivating() {
-        navigateToUpgradeTab()
-    }
-
-    static func showAutoActivationSuccess() {
-        refreshStatus()
-    }
-
-    static func showAutoActivationFailed(_ licenseKey: String) {
-        navigateToUpgradeTab()
-        presentActivationSheet(prefilledKey: licenseKey, autoFailedHint: true)
-    }
 }
 
 private final class ActivateButtonGate: NSObject, NSTextFieldDelegate {

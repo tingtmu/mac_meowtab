@@ -79,19 +79,20 @@ Sparkle and AppCenter stay linked. The cuts below remove each path's starting po
 `scripts/meowtab/check_offline.sh` runs in CI and fails if any cut is undone. It checks:
 
 - no `SPUStandardUpdaterController(` or `AppCenterCrash()` in `src/` outside `src/debug/`
-- no call to `LicenseManager.shared.activate(` or `scheduleAsyncRevalidationIfNeeded()` (definitions are allowed)
+- `LicenseManager.swift` still builds `shared` as `ProLicenseManager(` and keeps the empty `override func scheduleAsyncRevalidationIfNeeded() {}`; `App.swift` has no `handleCustomUrl` and no `.activate(`; `SettingsWindow.swift` has no `upgradeButtonClicked`. (Upstream's base-class calls to `activate(` and `scheduleAsyncRevalidationIfNeeded()` remain, but only the untouched base class and the unreachable Upgrade tab use them.)
 - no `checkForUpdatesNow` anywhere in `src/` (its functions are deleted, so a selector alone wouldn't compile), and no `#selector(App.showFeedbackPanel)` outside `src/debug/`
 - in the built `Info.plist` (`PlistBuddy`): no `SUPublicEDKey`, `SUEnableAutomaticChecks` false, and `NSPrincipalClass` = `NSApplication`
 
 ### 4. Pro unlocked, in one file
 
-`LicenseManager.swift` changes in three places:
+`LicenseManagerTests` (in the `unit-tests` target) builds its own `LicenseManager` instances and expects trial states from `initialize()` and `refreshState()`, so the base class must stay as upstream wrote it. Only `shared` changes, in `LicenseManager.swift`:
 
-- `private(set) var state: LicenseState = .pro` (61). This also covers anything that reads the state before `initialize()`, such as preference gating during `Preferences.initialize()`.
-- `initialize()` (127-130) sets `state = .pro` and no longer schedules revalidation.
-- `refreshState()` (135-138) leaves the state alone.
+- `shared` (17-25) builds a new `private final class ProLicenseManager: LicenseManager`, declared at the end of the file.
+- `ProLicenseManager` calls `initialize()` from its `init`, so it is Pro from construction. That covers anything that reads the state before `App` calls `initialize()`, such as preference gating during `Preferences.initialize()`.
+- It overrides `computeState()` to return `.pro` (unless a DEBUG mock is set), so every `refreshState()` keeps Pro and no trial date is written.
+- It overrides `scheduleAsyncRevalidationIfNeeded()` with an empty body, so the licence server is never asked.
 
-The rest of the file stays, so no code becomes unreachable. That matters because warnings are errors. Each line changed carries a `// MeowTab:` comment.
+The base class and its tests are untouched, so no code becomes unreachable. That matters because warnings are errors. Each changed line carries a `// MeowTab:` comment.
 
 What `.pro` does elsewhere, with no edits needed:
 
@@ -99,7 +100,7 @@ What `.pro` does elsewhere, with no edits needed:
 - **Trial prompts:** suppressed by `ProTransitionManager.swift:212`.
 - **Onboarding:** the trial announcement is nil outside `.trial` (`App.swift:246-249`).
 
-Upstream's Pro and trial tests run on their testable kernels, not on `LicenseManager.shared`, so they keep passing.
+Upstream's Pro and trial tests never use `shared`, so they keep passing unchanged.
 
 ### 5. Credit and GPL-3.0 compliance
 

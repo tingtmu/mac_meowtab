@@ -47,15 +47,16 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
 
   Verify: CI builds and tests pass (no warnings, as warnings are errors), and a `PlistBuddy` step confirms both keys.
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38108281949 (`e14cef0`): green; `SUPublicEDKey` absent, `SUEnableAutomaticChecks = false`.
-- [ ] 3.2 AppCenter (design.md 3):
+- [x] 3.2 AppCenter (design.md 3):
   - `App.swift:7` → `class App: NSApplication`;
   - delete `App.swift:38` and `:604`;
   - in `Info.plist`, set `NSPrincipalClass` to `NSApplication` and delete the AppCenter keys at 69-74;
   - remove the "Crash reports policy" row in Settings > General.
 
   Verify: build, test and `launch` pass on both architectures; the launch job is what catches a startup crash from the superclass change.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38108861497 (`15b3fd4`): green, both launch jobs included. `NSApplicationCrashOnExceptions` is registered where `AppCenterCrash` used to do it, keeping upstream's crash-on-exception behaviour.
 - [ ] 3.3 Licence and Pro (design.md 3–4):
-  - the three `LicenseManager.swift` edits (61, 127-130, 135-138);
+  - the `ProLicenseManager` subclass behind `LicenseManager.shared` (design.md 4);
   - delete `App.swift:677-702`;
   - remove the Upgrade entry (`SettingsWindow.swift:319`, `536-553`);
   - remove `Menubar.swift:45-49`.

@@ -16,7 +16,7 @@ class LicenseManager {
 
     static let shared: LicenseManager = {
         let keychain = SystemKeychain(service: keychainService)
-        return LicenseManager(
+        return ProLicenseManager( // MeowTab: Pro from launch, permanently, never asking the licence server
             clock: SystemClock(),
             keychain: keychain,
             api: RemoteLicenseClient(baseUrl: Endpoints.licenseApiBaseUrl, keychain: keychain),
@@ -293,4 +293,18 @@ class LicenseManager {
         state = .pro
     }
     #endif
+}
+
+// MeowTab: the class behind `shared`. It is Pro from construction, so preference gating that runs before
+// `initialize()` already sees Pro, and it never schedules a revalidation. The base class stays as upstream
+// wrote it, so `LicenseManagerTests` keep testing the trial and the licence flows unchanged.
+private final class ProLicenseManager: LicenseManager {
+    override init(clock: Clock, keychain: Keychain, api: LicenseAPI, defaults: UserDefaults) {
+        super.init(clock: clock, keychain: keychain, api: api, defaults: defaults)
+        initialize()
+    }
+
+    override func computeState() -> LicenseState { isMocked ? super.computeState() : .pro }
+
+    override func scheduleAsyncRevalidationIfNeeded() {}
 }

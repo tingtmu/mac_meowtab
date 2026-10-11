@@ -14,7 +14,7 @@ MeowTab SHALL NOT create Sparkle's updater, start AppCenter crash reporting, con
 - **THEN** the process is running, it holds no internet sockets, and no crash report was written
 
 #### Scenario: Static guard
-- **WHEN** a commit reintroduces `SPUStandardUpdaterController(`, `AppCenterCrash()`, a call to `LicenseManager.shared.activate(` or `scheduleAsyncRevalidationIfNeeded()`, or the feedback or update menu selectors
+- **WHEN** a commit reintroduces `SPUStandardUpdaterController(`, `AppCenterCrash()`, the licence URL handler, a `shared` licence manager that revalidates, or the feedback or update menu items
 - **THEN** `scripts/meowtab/check_offline.sh` fails the CI build
 
 ### Requirement: No automatic update
