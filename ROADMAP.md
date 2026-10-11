@@ -2,10 +2,10 @@
 
 Where MeowTab Mac goes after its first MVP. Each item says what to build, why, and how we'll know it's done, so it can be picked up on its own without the history of earlier sessions.
 
-**Today:** the MVP is planned as three OpenSpec changes, done in order. The first is done.
+**Today:** the MVP is planned as three OpenSpec changes, done in order. The first two are done.
 
 1. [mac-fork-baseline](openspec/changes/archive/2026-10-11-mac-fork-baseline/proposal.md) (done, 2026-10-11): the AltTab v11.9.0 fork, renamed, offline, Pro unlocked, and green on CI. Its specs are in `openspec/specs/`.
-2. [mac-png-peek](openspec/changes/mac-png-peek/proposal.md): the peek with three static PNG moods and a MeowTab settings section.
+2. [mac-png-peek](openspec/changes/mac-png-peek/proposal.md) (done, 2026-10-11): the peek with three static PNG moods and a MeowTab settings section.
 3. [mac-preview-release](openspec/changes/mac-preview-release/proposal.md): stable signing, packages, the install guide, one real-Mac acceptance run, and the 0.1.0 preview.
 
 AltTab's own features stay as upstream has them. GIF playback, background cleaning and trimming AltTab down are deferred.

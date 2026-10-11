@@ -14,7 +14,7 @@ The peek is what makes MeowTab MeowTab: a picture sitting on the switcher's top-
   - "windows" means real windows the switcher lists, scrolled-out ones included; app-only placeholder tiles don't count;
   - with no real window, the picture hides.
 - **Peek height.** 80 % of the picture's art shows above the pane with 1 window, rising evenly to 95 % at `manyFrom + 4` windows. Transparent padding is ignored.
-- **It always fits.** The pane gives up vertical room so the tallest possible peek stays inside the display's usable area. The pane doesn't move when the count changes during an open switcher. The picture shrinks only on very short displays.
+- **It always fits.** The pane gives up vertical room so the tallest possible peek stays inside the display's usable area. The room it gives up doesn't change when the count changes during an open switcher. The picture shrinks only on very short displays.
 - **Static PNGs.** The three `chill_*.png` cats from Windows MeowTab ship in the app. There is no animation or GIF yet. No file is read and no picture decoded while the switcher is open.
 - **A MeowTab section in Settings**, first in the sidebar. It has:
   - three picture cards (choose or drop a PNG; "Use default");
