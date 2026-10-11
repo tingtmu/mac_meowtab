@@ -79,9 +79,10 @@ Sparkle and AppCenter stay linked. The cuts below remove each path's starting po
 `scripts/meowtab/check_offline.sh` runs in CI and fails if any cut is undone. It checks:
 
 - no `SPUStandardUpdaterController(` or `AppCenterCrash()` in `src/` outside `src/debug/`
-- `LicenseManager.swift` still builds `shared` as `ProLicenseManager(` and keeps the empty `override func scheduleAsyncRevalidationIfNeeded() {}`; `App.swift` has no `handleCustomUrl` and no `.activate(`; `SettingsWindow.swift` has no `upgradeButtonClicked`. (Upstream's base-class calls to `activate(` and `scheduleAsyncRevalidationIfNeeded()` remain, but only the untouched base class and the unreachable Upgrade tab use them.)
-- no `checkForUpdatesNow` anywhere in `src/` (its functions are deleted, so a selector alone wouldn't compile), and no `#selector(App.showFeedbackPanel)` outside `src/debug/`
-- in the built `Info.plist` (`PlistBuddy`): no `SUPublicEDKey`, `SUEnableAutomaticChecks` false, and `NSPrincipalClass` = `NSApplication`
+- `LicenseManager.swift` still builds `shared` as `ProLicenseManager(` and keeps the empty `override func scheduleAsyncRevalidationIfNeeded() {}`; `App.swift` has no `handleCustomUrl` and no `.activate(` other than AppKit's `activate(ignoringOtherApps:)`; `SettingsWindow.swift` has no `upgradeButtonClicked`. (Upstream's base-class calls to `activate(` and `scheduleAsyncRevalidationIfNeeded()` remain, but only the untouched base class and the unreachable Upgrade tab use them.)
+- no `checkForUpdatesNow` anywhere in `src/` (its functions are deleted, so a selector alone wouldn't compile)
+- `Menubar.swift` has no `App.showFeedbackPanel` and no `addMenuItem(NSLocalizedString("…"` for "Check for updates…", "Get Pro", "My Account" or "Support this project" (matched as item titles, because the unused `UpgradeMenuItemView` still draws "Get Pro")
+- in the built `Info.plist` (`PlistBuddy`, when its path is passed): no `SUPublicEDKey` or `AppCenterSecret`, `SUEnableAutomaticChecks` false, and `NSPrincipalClass` = `NSApplication`. Without a path, the source checks run alone, so they also work in Git Bash on Windows.
 
 ### 4. Pro unlocked, in one file
 

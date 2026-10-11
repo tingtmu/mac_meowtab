@@ -63,16 +63,8 @@ jobs:
           check CFBundleShortVersionString "$expected_version"
           check LSMinimumSystemVersion 12.0
           exit "$status"
-      - name: Check updater is off
-        run: |
-          plist="$APP/Contents/Info.plist"
-          if /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$plist" >/dev/null 2>&1; then
-            echo "::error::SUPublicEDKey is present"
-            exit 1
-          fi
-          checks=$(/usr/libexec/PlistBuddy -c "Print :SUEnableAutomaticChecks" "$plist")
-          echo "SUEnableAutomaticChecks = $checks"
-          [ "$checks" = false ] || { echo "::error::SUEnableAutomaticChecks is '$checks', expected false"; exit 1; }
+      - name: Check offline cuts
+        run: bash scripts/meowtab/check_offline.sh "$APP/Contents/Info.plist"
       - name: Package
         id: package
         run: |

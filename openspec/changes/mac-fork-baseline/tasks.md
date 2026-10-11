@@ -62,7 +62,7 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
   - remove `Menubar.swift:45-49`.
 
   Verify: the upstream test suite passes unchanged on all three runners. Add the `offline-app` "Weeks after installing" and "Settings window" scenarios, and the "Both apps installed" scenario of `fork-identity`, to `docs/acceptance.md`.
-- [ ] 3.4 Add `scripts/meowtab/check_offline.sh` with the checks of design.md 3, and run it from `build` as `bash scripts/meowtab/check_offline.sh`. Verify: it passes on `main`. On a throwaway branch, restoring `App.swift:604` makes it fail. Delete that branch.
+- [ ] 3.4 Add `scripts/meowtab/check_offline.sh` with the checks of design.md 3, and run it from `build` as `bash scripts/meowtab/check_offline.sh`. Verify: it passes on `main`. On a throwaway branch, restoring `App.swift:604` (`App.appCenterDelegate = AppCenterCrash()`) makes it fail. Delete that branch.
 
 ## 4. Close
 
