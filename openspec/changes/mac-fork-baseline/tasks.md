@@ -12,7 +12,7 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
 
 ## 2. Identity and credit
 
-- [ ] 2.1 Rename (design.md 2):
+- [x] 2.1 Rename (design.md 2):
   - `config/base.xcconfig:3-4`;
   - the `AltTab.app` product reference in `project.pbxproj` (854, 1519, 2011);
   - `BuildableName` in `Debug.xcscheme` and `Release.xcscheme`;
@@ -20,6 +20,7 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
   - point the `build` and `launch` jobs at `MeowTab.app`.
 
   Verify: the `build` job's `PlistBuddy` step asserts the bundle ID, `CFBundleName` `MeowTab`, version `0.1.0` and `LSMinimumSystemVersion` `12.0`. The `launch` job passes with `pgrep -x MeowTab`.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38107835080 (`2d7d8e2`): identity `io.github.tingtmu.meowtab.macos` / `MeowTab` / `0.1.0` / `12.0`; both launch jobs green.
 - [ ] 2.2 Update the About window (design.md 5):
   - `App.swift:17` → the fork URL;
   - a "Based on AltTab" link in `AboutTab.swift:10-16`;
