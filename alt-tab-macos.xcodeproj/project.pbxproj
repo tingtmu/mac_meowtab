@@ -608,8 +608,6 @@
 		D04BAE2200000000ED005T12 /* SettingsSectionSearchContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSectionSearchContentTests.swift; sourceTree = "<group>"; };
 		D04BAE2200000000ED006T12 /* SidebarListTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarListTests.swift; sourceTree = "<group>"; };
 		5F04852D2F09AC9700235D4A /* WindowCaptureEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCaptureEvents.swift; sourceTree = "<group>"; };
-		5F05D0E62F31441A004A95F9 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
-		5F05D0E72F31441A004A95F9 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		5F0A63002F82D97C00AE4C38 /* RemoteLicenseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLicenseClient.swift; sourceTree = "<group>"; };
 		5F0A63012F82D97C00AE4C38 /* LicenseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicenseManager.swift; sourceTree = "<group>"; };
 		5F0A63022F82D97C00AE4C38 /* LicenseState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicenseState.swift; sourceTree = "<group>"; };
@@ -1474,8 +1472,6 @@
 			children = (
 				5FC0B43B2F8F6F6D00DCC310 /* ai */,
 				5FC0B4352F8F6ECB00DCC310 /* changelog.md */,
-				5F05D0E62F31441A004A95F9 /* AGENTS.md */,
-				5F05D0E72F31441A004A95F9 /* CLAUDE.md */,
 				D04BA1A461BBB5A9BE15E015 /* Products */,
 				D04BAD40CE2D3A8AAC3819D0 /* .gitignore */,
 				D04BA0E1C5DBC07108AC2F54 /* README.md */,

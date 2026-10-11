@@ -20,3 +20,5 @@ codesign.p12
 /config/local.xcconfig
 /scripts/l10n/missing-translations.json
 /ai/output/
+# MeowTab: local agent instructions, not shared
+/CLAUDE.md

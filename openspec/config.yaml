@@ -1,0 +1,45 @@
+schema: spec-driven
+
+context: |
+  MeowTab for Mac is a GPL-3.0 fork of AltTab (github.com/lwouis/alt-tab-macos) at tag v11.9.0,
+  commit 6d8940b5307d7348aaca70259c28147fc5ab00b3. Cite upstream code as path:line at that tag.
+  The developer has no Mac. Every task must be checkable on GitHub-hosted macOS runners
+  (macos-15, macos-15-intel, macos-26), or be listed for the final real-Mac acceptance.
+  Windows MeowTab (github.com/tingtmu/meowtab) is a behaviour reference only; no code is ported.
+  Keep upstream behaviour unless a change says otherwise; put new code under src/meowtab/.
+
+rules:
+  tasks:
+    - Each task names the files it touches and ends with a check that CI or the acceptance run performs.
+    - Upstream line numbers are at v11.9.0; re-locate by symbol name if they have moved.
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
