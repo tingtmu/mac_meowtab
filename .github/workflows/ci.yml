@@ -12,6 +12,8 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
+    outputs:
+      zip: ${{ steps.package.outputs.zip }}
     env:
       # Path to the built app. Renaming the app to MeowTab.app later is a change to this line only.
       APP: DerivedData/Build/Products/Release/AltTab.app
@@ -42,10 +44,12 @@ jobs:
           [[ "$archs" == *" arm64 "* && "$archs" == *" x86_64 "* ]] || { echo "::error::expected arm64 and x86_64"; exit 1; }
           codesign --verify --deep --strict --verbose=2 "$APP"
       - name: Package
+        id: package
         run: |
           zip="$(basename "$APP" .app)-${GITHUB_SHA::7}.zip"
           ditto -c -k --keepParent "$APP" "$zip"
           echo "ZIP=$zip" >> "$GITHUB_ENV"
+          echo "zip=$zip" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ZIP }}
@@ -71,3 +75,65 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       # -configuration Release mirrors upstream's scripts/run_tests.sh (the Test scheme itself defaults to Debug).
       - run: xcodebuild test -project alt-tab-macos.xcodeproj -scheme Test -configuration Release
+
+  # Without macOS permissions the app stops at its permission screen, so this only checks that it starts and stays quiet before permissions.
+  launch:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    env:
+      # Renaming the app to MeowTab later is a change to this line only.
+      APP_NAME: AltTab
+      ZIP: ${{ needs.build.outputs.zip }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.build.outputs.zip }}
+      - name: Install
+        run: |
+          sudo ditto -x -k "$ZIP" /Applications
+          codesign -dv "/Applications/${APP_NAME}.app" || true
+      - name: Launch
+        run: |
+          touch "$RUNNER_TEMP/launch-time"
+          open -n "/Applications/${APP_NAME}.app"
+          sleep 20
+      - name: Check
+        run: |
+          status=0
+          echo "RUNNING=no" >> "$GITHUB_ENV"
+          pid=$(pgrep -x "$APP_NAME" | head -n 1 || true)
+          if [ -z "$pid" ]; then
+            echo "::error::$APP_NAME is not running 20s after launch"
+            status=1
+          else
+            echo "RUNNING=yes" >> "$GITHUB_ENV"
+            # lsof exits 1 when it finds nothing.
+            socks=$(lsof -nP -a -i -p "$pid" || true)
+            sockets=0
+            [ -z "$socks" ] || sockets=$(( $(printf '%s\n' "$socks" | wc -l) - 1 ))
+            echo "SOCKETS=$sockets" >> "$GITHUB_ENV"
+            if [ -n "$socks" ]; then
+              echo "::error::$APP_NAME opened $sockets internet socket(s)"
+              echo "$socks"
+              status=1
+            fi
+          fi
+          crashes=$(find ~/Library/Logs/DiagnosticReports /Library/Logs/DiagnosticReports -maxdepth 1 -type f \
+            -name "${APP_NAME}*" \( -name '*.ips' -o -name '*.crash' \) -newer "$RUNNER_TEMP/launch-time" 2>/dev/null || true)
+          if [ -n "$crashes" ]; then
+            echo "::error::$APP_NAME crashed after launch"
+            echo "$crashes"
+            status=1
+          fi
+          exit "$status"
+      - name: Quit
+        if: always()
+        run: pkill -x "$APP_NAME" || true
+      - name: Summary
+        if: always()
+        run: |
+          echo "launch on macOS $(sw_vers -productVersion) ($(uname -m)): running=${RUNNING:-no}, sockets=${SOCKETS:-n/a}" >> "$GITHUB_STEP_SUMMARY"
