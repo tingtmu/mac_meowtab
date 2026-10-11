@@ -16,7 +16,8 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
 
 - [x] 2.1 `MoodPeek.swift`: `Mood`, `MoodSettings` (defaults, `validated()`, the clamping rules), `mood(n)` and `share(n)` (design.md 2). Write the matching `MoodPeekTests` cases from design.md 9 first. Verify: CI runs the new cases, and they pass on all three runners.
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38125401209 (`6cfa469`): all seven jobs green. All 13 `MoodPeekTests` cases passed on macos-15, macos-15-intel and macos-26 (1498 tests, 0 failures, on each).
-- [ ] 2.2 `PeekGeometry` in `MoodPeek.swift`: `pictureSize`, `up(n)`, `reserve`, box scale, pane cap, pane origin and peek frame (design.md 3–4). Use plain `CGRect`/`CGSize` inputs, not `NSScreen`. Write the geometry cases from design.md 9 first. Verify: they pass on all three runners.
+- [x] 2.2 `PeekGeometry` in `MoodPeek.swift`: `pictureSize`, `up(n)`, `reserve`, box scale, pane cap, pane origin and peek frame (design.md 3–4). Use plain `CGRect`/`CGSize` inputs, not `NSScreen`. Write the geometry cases from design.md 9 first. Verify: they pass on all three runners.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38126187580 (`853d814`): all seven jobs green. The 16 new geometry cases pass, so all 29 `MoodPeekTests` cases pass on macos-15, macos-15-intel and macos-26 (1514 tests, 0 failures, on each). Design 9's shrink example moved from 600 to 400 pt: a 160-pt box never needs more than 30 % of 600.
 
 ## 3. Pictures and storage (test-first)
 

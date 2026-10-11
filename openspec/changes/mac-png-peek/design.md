@@ -147,9 +147,9 @@ Behaviour of the controller:
 1. File size ≤ 10 MiB (`FileManager` attributes), else `.tooBig`.
 2. `CGImageSourceCreateWithURL(url, [kCGImageSourceShouldCache: false])`, else `.unreadable`.
 3. `CGImageSourceGetType` is `public.png`, else `.notPNG`. GIF, JPEG or a renamed file fail here.
-4. `CGImageSourceGetCount` is 1, else `.animated`. ImageIO counts an APNG's frames. If the test in decision 9 shows it doesn't, scan for an `acTL` chunk before the first `IDAT` instead.
+4. `CGImageSourceGetCount` is 1: more gives `.animated`, and 0 (a truncated file can report no images) gives `.unreadable`. ImageIO counts an APNG's frames. If the test in decision 9 shows it doesn't, scan for an `acTL` chunk before the first `IDAT` instead.
 5. `CGImageSourceCopyPropertiesAtIndex`: width and height ≤ 8192 and width × height ≤ 32,000,000, else `.tooLarge`. No pixel has been decoded yet.
-6. Decode:
+6. Decode, once the file ends with PNG's `IEND` chunk: a cut-short PNG can still decode into a partly blank picture, and ImageIO's frame status isn't reliable for a still image's only frame, so a missing `IEND` gives `.unreadable` first.
    - longest side > 1024: `CGImageSourceCreateThumbnailAtIndex` with `FromImageAlways`, `ThumbnailMaxPixelSize: 1024` and `WithTransform`;
    - otherwise: `CGImageSourceCreateImageAtIndex`.
 
