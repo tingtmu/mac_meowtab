@@ -33,7 +33,6 @@ jobs:
           TEAM_ID =
           OTHER_CODE_SIGN_FLAGS = --deep --options runtime
           CURRENT_PROJECT_VERSION = $version
-          APPCENTER_SECRET =
           EOF
       - name: Build
         run: |

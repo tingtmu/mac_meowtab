@@ -1,10 +1,9 @@
 import Cocoa
 import Darwin
 import ShortcutRecorder
-import AppCenterCrashes
 import Sparkle
 
-class App: AppCenterApplication {
+class App: NSApplication {
     /// Held for the process lifetime. `static let` is lazy, so `init` has to touch it or App Nap is never
     /// disabled.
     private static let activity = ProcessInfo.processInfo.beginActivity(options: .userInitiatedAllowingIdleSystemSleep,
@@ -32,10 +31,6 @@ class App: AppCenterApplication {
     private static let launchInventoryGraceInMs = 400
     private static var pendingShowSettingsWindow = false
     private static var firstLaunchSettingsObserver: NSObjectProtocol?
-    /// Written once and never read: AppCenter holds its delegate weakly, so this is the strong reference
-    /// that keeps the crash handler alive for the process lifetime.
-    // periphery:ignore
-    private static var appCenterDelegate: AppCenterCrash?
     static var sparkleDelegate: SparkleDelegate?
     static var updaterController: SPUStandardUpdaterController?
     private static var delayedDisplayWork: DispatchWorkItem?
@@ -585,7 +580,9 @@ class App: AppCenterApplication {
 
 extension App: NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        App.appCenterDelegate = AppCenterCrash()
+        // MeowTab: AppCenterCrash used to register this. It routes main-thread exceptions to the uncaught-exception
+        // handler (main.swift), so they end in `emergencyExit` instead of AppKit logging them and carrying on.
+        UserDefaults.standard.register(defaults: ["NSApplicationCrashOnExceptions": true])
         App.shared.disableRelaunchOnLogin()
         Logger.initialize()
         MainThreadStall.observe()
@@ -605,8 +602,7 @@ extension App: NSApplicationDelegate {
         // Same reasoning as the queues above: a preference the user never changed lives only in the
         // registration domain, so reading one before `registerDefaults()` traps on the force-unwrap in
         // `CachedUserDefaults.getThenConvertOrReset`. The "move to /Applications" modal below drains the
-        // main queue, and the crash-report attachment delegate hops to main there to build the debug
-        // profile, which reads `showOnScreen` / `appearanceStyle`. Migrations must keep running before
+        // main queue. Migrations must keep running before
         // `registerDefaults()` (they read raw plist values), which `initialize()` already guarantees.
         // This only touches UserDefaults + TIS (main-thread), so it depends on nothing below.
         Preferences.initialize()

@@ -71,8 +71,8 @@ Sparkle and AppCenter stay linked. The cuts below remove each path's starting po
 
 | Path | Cut |
 | --- | --- |
-| Sparkle | Delete `App.swift:564-575`, so `App.updaterController` stays nil. Every other use is optional-chained and becomes a no-op: `PreferencesEvents.swift:97-98`, `UserDefaultsEvents.swift:25-34`, `GeneralTab.swift:101-102`, `FeedbackWindow.swift:165,245`. Remove the updates rows (`GeneralTab.swift:24-26` and their layout) and the "Check for updates…" item (`Menubar.swift:40`). In `Info.plist`, delete `SUPublicEDKey` (61-62) and set `SUEnableAutomaticChecks` to false (63-64). |
-| AppCenter | `App.swift:7` becomes `class App: NSApplication`. Delete `appCenterDelegate` (38) and its assignment (604). In `Info.plist`, set `NSPrincipalClass` to `NSApplication` (36-37) and delete the AppCenter keys (69-74). `App.shared.run()` (`main.swift:64`) is unaffected. |
+| Sparkle | Delete `App.swift:564-575`, so `App.updaterController` stays nil. Every other use is optional-chained and becomes a no-op: `PreferencesEvents.swift:97-98`, `UserDefaultsEvents.swift:25-34`, `GeneralTab.swift:101-102`, `FeedbackWindow.swift:165,245`. Remove the updates rows (`GeneralTab.swift:24-26` and their layout) and the "Check for updates…" item (`Menubar.swift:40`), with the two `checkForUpdatesNow` functions this leaves unused. In `Info.plist`, delete `SUPublicEDKey` (61-62) and set `SUEnableAutomaticChecks` to false (63-64). |
+| AppCenter | `App.swift:7` becomes `class App: NSApplication`. Delete `appCenterDelegate` (38) and its assignment (604). In `Info.plist`, set `NSPrincipalClass` to `NSApplication` (36-37) and delete the AppCenter keys (69-74). `App.shared.run()` (`main.swift:64`) is unaffected. Remove the "Crash reports policy" row in Settings > General, which would control nothing; its preference key stays. |
 | Licence server | Covered by decision 4. Delete `application(_:open:)` and `handleCustomUrl` (`App.swift:677-702`); their only job is licence activation. Remove the Upgrade entry in Settings (`SettingsWindow.swift:319`, `536-553`) and the Get Pro, My Account and Support this project menu items (`Menubar.swift:46-49`). |
 | Feedback | Remove "Send feedback…" (`Menubar.swift:45`). The DEBUG-only `QaSurfaces.swift:398` may keep it. |
 
@@ -80,7 +80,7 @@ Sparkle and AppCenter stay linked. The cuts below remove each path's starting po
 
 - no `SPUStandardUpdaterController(` or `AppCenterCrash()` in `src/` outside `src/debug/`
 - no call to `LicenseManager.shared.activate(` or `scheduleAsyncRevalidationIfNeeded()` (definitions are allowed)
-- no `#selector(App.showFeedbackPanel)` or `#selector(App.checkForUpdatesNow)`
+- no `checkForUpdatesNow` anywhere in `src/` (its functions are deleted, so a selector alone wouldn't compile), and no `#selector(App.showFeedbackPanel)` outside `src/debug/`
 - in the built `Info.plist` (`PlistBuddy`): no `SUPublicEDKey`, `SUEnableAutomaticChecks` false, and `NSPrincipalClass` = `NSApplication`
 
 ### 4. Pro unlocked, in one file
@@ -130,8 +130,9 @@ DEVELOPMENT_TEAM =
 TEAM_ID =
 OTHER_CODE_SIGN_FLAGS = --deep --options runtime
 CURRENT_PROJECT_VERSION = <contents of MEOWTAB_VERSION>
-APPCENTER_SECRET =
 ```
+
+(`APPCENTER_SECRET` is no longer needed once task 3.2 removes the `AppCenterSecret` key from `Info.plist`.)
 
 2. Build:
 

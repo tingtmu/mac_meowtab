@@ -21,33 +21,37 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
 
   Verify: the `build` job's `PlistBuddy` step asserts the bundle ID, `CFBundleName` `MeowTab`, version `0.1.0` and `LSMinimumSystemVersion` `12.0`. The `launch` job passes with `pgrep -x MeowTab`.
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38107835080 (`2d7d8e2`): identity `io.github.tingtmu.meowtab.macos` / `MeowTab` / `0.1.0` / `12.0`; both launch jobs green.
-- [ ] 2.2 Update the About window (design.md 5):
+- [x] 2.2 Update the About window (design.md 5):
   - `App.swift:17` → the fork URL;
   - a "Based on AltTab" link in `AboutTab.swift:10-16`;
   - the support button relabelled "Sponsor AltTab's author", with `App.supportProject` (`App.swift:145-147`) opening github.com/sponsors/lwouis.
 
   Verify: CI builds, and `grep` finds both URLs in `src/`. Create `docs/acceptance.md`, the checklist the tester works through in `mac-preview-release`. Give it one row per manual check (spec, scenario, result, notes), and add the `fork-identity` "About window" and "Supporting the author from the app" scenarios.
-- [ ] 2.3 Write the repository's notices (design.md 5):
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38107885382 (`e5a57a5`): build, tests and launch green; `App.swift:17` has the fork URL and `Endpoints.swift:8` the sponsors URL; `docs/acceptance.md` created.
+- [x] 2.3 Write the repository's notices (design.md 5):
   - replace `README.md`: credit block first, then status, what MeowTab adds (nothing yet), compatibility (target 12.0+; CI-tested versions; 12–14 untested), known issues (about ten "AltTab" strings, launch at login on by default), and how CI builds it;
   - add `NOTICE.md`;
   - add one line to `docs/acknowledgments.md`;
   - add the `LICENCE.md` comparison step to `build`.
 
   Verify: the comparison passes, and reading README.md against the `fork-identity` spec finds every required item.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38108051581 (`3b4046e`): licence check green; README checked against `fork-identity` and `mac-ci` "Honest coverage".
 
 ## 3. Offline and Pro unlocked
 
-- [ ] 3.1 Sparkle (design.md 3):
+- [x] 3.1 Sparkle (design.md 3):
   - delete `App.swift:564-575`;
   - remove `GeneralTab.swift:24-26` and the layout rows that place them;
   - remove `Menubar.swift:40`;
   - in `Info.plist`, delete `SUPublicEDKey` and set `SUEnableAutomaticChecks` to false.
 
   Verify: CI builds and tests pass (no warnings, as warnings are errors), and a `PlistBuddy` step confirms both keys.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38108281949 (`e14cef0`): green; `SUPublicEDKey` absent, `SUEnableAutomaticChecks = false`.
 - [ ] 3.2 AppCenter (design.md 3):
   - `App.swift:7` → `class App: NSApplication`;
   - delete `App.swift:38` and `:604`;
-  - in `Info.plist`, set `NSPrincipalClass` to `NSApplication` and delete the AppCenter keys at 69-74.
+  - in `Info.plist`, set `NSPrincipalClass` to `NSApplication` and delete the AppCenter keys at 69-74;
+  - remove the "Crash reports policy" row in Settings > General.
 
   Verify: build, test and `launch` pass on both architectures; the launch job is what catches a startup crash from the superclass change.
 - [ ] 3.3 Licence and Pro (design.md 3–4):
