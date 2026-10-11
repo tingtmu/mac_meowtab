@@ -545,6 +545,7 @@ class SettingsWindow: NSWindow {
 
     private func sectionDefinitions() -> [SettingsSectionDefinition] {
         [
+            SettingsSectionDefinition(id: "meowtab", title: "MeowTab", symbol: .circledStar, builder: MeowTabSettingsTab.initTab, registerDynamicSearchContent: nil), // MeowTab: the peek's settings, first, so Settings opens on them
             SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Appearance", comment: ""), symbol: .paintpalette, builder: AppearanceTab.initTab, registerDynamicSearchContent: nil),
             SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Controls", comment: ""), symbol: .command, builder: ControlsTab.initTab, registerDynamicSearchContent: ControlsTab.registerSidebarRowsSearchContent),
             SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), symbol: .gearshape, builder: GeneralTab.initTab, registerDynamicSearchContent: nil),
@@ -1240,6 +1241,7 @@ extension SettingsWindow: NSWindowDelegate {
         // close machinery causes objc_release crashes on re-entry.
         DispatchQueue.main.async { [weak self] in
             guard let self, SettingsWindow.shared === self else { return }
+            MeowTabSettingsTab.cleanup() // MeowTab: releases the peek settings' controls
             AppearanceTab.cleanup()
             ControlsTab.cleanup()
             GeneralTab.cleanup()
@@ -1315,6 +1317,7 @@ extension SettingsWindow {
         }
         window.delegate = nil
         window.qaCloseWithoutHidingApp()
+        MeowTabSettingsTab.cleanup() // MeowTab: releases the peek settings' controls
         AppearanceTab.cleanup()
         ControlsTab.cleanup()
         GeneralTab.cleanup()
