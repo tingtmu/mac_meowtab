@@ -475,6 +475,20 @@
 		AD0500000000000000000103 /* menubar-3.pdf in Resources */ = {isa = PBXBuildFile; fileRef = AD0500000000000000000003 /* menubar-3.pdf */; };
 		AD0500000000000000000104 /* menubar-4.pdf in Resources */ = {isa = PBXBuildFile; fileRef = AD0500000000000000000004 /* menubar-4.pdf */; };
 		AD0500000000000000000105 /* menubar-5.pdf in Resources */ = {isa = PBXBuildFile; fileRef = AD0500000000000000000005 /* menubar-5.pdf */; };
+		C16056B14CCF749ED92873C9 /* MoodPeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B276E5564846203C273C9A6 /* MoodPeek.swift */; };
+		B0F8173644176EEA6716AA67 /* MoodPeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B276E5564846203C273C9A6 /* MoodPeek.swift */; };
+		9C26D3E8FD20619AF551F55E /* PeekPicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0109D9B909D3DB78C864B093 /* PeekPicture.swift */; };
+		D116B93D273F99666208A2DC /* PeekPicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0109D9B909D3DB78C864B093 /* PeekPicture.swift */; };
+		FA3638ADDE0F112CD1A69DC3 /* MeowTabStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34281BD7573164D00388A4BC /* MeowTabStore.swift */; };
+		24D63C803E02C6578C0D663D /* MeowTabStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34281BD7573164D00388A4BC /* MeowTabStore.swift */; };
+		69233671B3F22F53B597B948 /* PeekPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096EE693E3DAAC24858DBB69 /* PeekPanel.swift */; };
+		8A3B33F184544AC552E3E8D5 /* MeowTabSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB155B3936D7B8E03FD8F74 /* MeowTabSettingsTab.swift */; };
+		84CE0991E83280FC1F47112F /* MoodPeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C773C38EF001B1DC9500B1 /* MoodPeekTests.swift */; };
+		D94AC17DEA713B688A75530A /* PeekPictureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499D52D3F19142B8F76EE7E9 /* PeekPictureTests.swift */; };
+		15930F52CB3195ADE291475F /* MeowTabStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C01E7B73BD82F359619E032A /* MeowTabStoreTests.swift */; };
+		3B39512D507A68DBD709A2C0 /* chill_few.png in Resources */ = {isa = PBXBuildFile; fileRef = 73A1603A5FBD2C10CA9806E0 /* chill_few.png */; };
+		2C587E251C2CD3CB1ED7F53B /* chill_some.png in Resources */ = {isa = PBXBuildFile; fileRef = 3706DF0C626FE60E92ED09EC /* chill_some.png */; };
+		0BDA4A3DAE0BE5DB5934F433 /* chill_many.png in Resources */ = {isa = PBXBuildFile; fileRef = 6D41A29C9F40D985168376C8 /* chill_many.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -946,6 +960,17 @@
 		AD0500000000000000000003 /* menubar-3.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "menubar-3.pdf"; sourceTree = "<group>"; };
 		AD0500000000000000000004 /* menubar-4.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "menubar-4.pdf"; sourceTree = "<group>"; };
 		AD0500000000000000000005 /* menubar-5.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "menubar-5.pdf"; sourceTree = "<group>"; };
+		1B276E5564846203C273C9A6 /* MoodPeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPeek.swift; sourceTree = "<group>"; };
+		0109D9B909D3DB78C864B093 /* PeekPicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeekPicture.swift; sourceTree = "<group>"; };
+		34281BD7573164D00388A4BC /* MeowTabStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeowTabStore.swift; sourceTree = "<group>"; };
+		096EE693E3DAAC24858DBB69 /* PeekPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeekPanel.swift; sourceTree = "<group>"; };
+		7DB155B3936D7B8E03FD8F74 /* MeowTabSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeowTabSettingsTab.swift; sourceTree = "<group>"; };
+		12C773C38EF001B1DC9500B1 /* MoodPeekTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPeekTests.swift; sourceTree = "<group>"; };
+		499D52D3F19142B8F76EE7E9 /* PeekPictureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeekPictureTests.swift; sourceTree = "<group>"; };
+		C01E7B73BD82F359619E032A /* MeowTabStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeowTabStoreTests.swift; sourceTree = "<group>"; };
+		73A1603A5FBD2C10CA9806E0 /* chill_few.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = chill_few.png; sourceTree = "<group>"; };
+		3706DF0C626FE60E92ED09EC /* chill_some.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = chill_some.png; sourceTree = "<group>"; };
+		6D41A29C9F40D985168376C8 /* chill_many.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = chill_many.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1688,6 +1713,7 @@
 				5C5A1100000000000000E001 /* windowserver */,
 				5A1100000000000000050001 /* window-tracking */,
 				47EEAE706D50FB2CB6B0A2FD /* secondary-windows */,
+				22117A56A286AB4DE871D08F /* meowtab */,
 				BF0C8468DF35990A7731D86C /* MainMenu.swift */,
 				D04BAD905546AA93E5117B0A /* Menubar.swift */,
 				5F7E57000000000000000001 /* _test-support */,
@@ -1805,6 +1831,7 @@
 				D04BA7568B7165A7726306A7 /* icons */,
 				D04BA60A6D08C041F5BF8CC9 /* SF-Pro-Text-Regular.otf */,
 				1C961658C754FEAB9B5F562B /* illustrations */,
+				8E5C382694A435B94DFECD68 /* meowtab */,
 			);
 			path = resources;
 			sourceTree = "<group>";
@@ -1966,6 +1993,31 @@
 				4C8B3930635A963ACF1016A9 /* SearchDiscoverySpecs.md */,
 			);
 			path = "search-discovery";
+			sourceTree = "<group>";
+		};
+		22117A56A286AB4DE871D08F /* meowtab */ = {
+			isa = PBXGroup;
+			children = (
+				1B276E5564846203C273C9A6 /* MoodPeek.swift */,
+				0109D9B909D3DB78C864B093 /* PeekPicture.swift */,
+				34281BD7573164D00388A4BC /* MeowTabStore.swift */,
+				096EE693E3DAAC24858DBB69 /* PeekPanel.swift */,
+				7DB155B3936D7B8E03FD8F74 /* MeowTabSettingsTab.swift */,
+				12C773C38EF001B1DC9500B1 /* MoodPeekTests.swift */,
+				499D52D3F19142B8F76EE7E9 /* PeekPictureTests.swift */,
+				C01E7B73BD82F359619E032A /* MeowTabStoreTests.swift */,
+			);
+			path = meowtab;
+			sourceTree = "<group>";
+		};
+		8E5C382694A435B94DFECD68 /* meowtab */ = {
+			isa = PBXGroup;
+			children = (
+				73A1603A5FBD2C10CA9806E0 /* chill_few.png */,
+				3706DF0C626FE60E92ED09EC /* chill_some.png */,
+				6D41A29C9F40D985168376C8 /* chill_many.png */,
+			);
+			path = meowtab;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2145,6 +2197,9 @@
 				AD0500000000000000000103 /* menubar-3.pdf in Resources */,
 				AD0500000000000000000104 /* menubar-4.pdf in Resources */,
 				AD0500000000000000000105 /* menubar-5.pdf in Resources */,
+				3B39512D507A68DBD709A2C0 /* chill_few.png in Resources */,
+				2C587E251C2CD3CB1ED7F53B /* chill_some.png in Resources */,
+				0BDA4A3DAE0BE5DB5934F433 /* chill_many.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2336,6 +2391,12 @@
 				5F1CE001000000000000000B /* RemoteLicenseClient.swift in Sources */,
 				5F1CE001000000000000000C /* MachineFingerprint.swift in Sources */,
 				AECF000000000000000000A3 /* Endpoints.swift in Sources */,
+				B0F8173644176EEA6716AA67 /* MoodPeek.swift in Sources */,
+				D116B93D273F99666208A2DC /* PeekPicture.swift in Sources */,
+				24D63C803E02C6578C0D663D /* MeowTabStore.swift in Sources */,
+				84CE0991E83280FC1F47112F /* MoodPeekTests.swift in Sources */,
+				D94AC17DEA713B688A75530A /* PeekPictureTests.swift in Sources */,
+				15930F52CB3195ADE291475F /* MeowTabStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2577,6 +2638,11 @@
 				BF0C8A5FA46C5E74A071FF4C /* ScrollwheelEvents.swift in Sources */,
 				BF0C82E9AB495AAAA182764A /* CursorEvents.swift in Sources */,
 				BF0C8F8F1B7A3C4D5E6F7082 /* ContextMenuEvents.swift in Sources */,
+				C16056B14CCF749ED92873C9 /* MoodPeek.swift in Sources */,
+				9C26D3E8FD20619AF551F55E /* PeekPicture.swift in Sources */,
+				FA3638ADDE0F112CD1A69DC3 /* MeowTabStore.swift in Sources */,
+				69233671B3F22F53B597B948 /* PeekPanel.swift in Sources */,
+				8A3B33F184544AC552E3E8D5 /* MeowTabSettingsTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

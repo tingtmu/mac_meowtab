@@ -65,6 +65,16 @@ jobs:
           exit "$status"
       - name: Check offline cuts
         run: bash scripts/meowtab/check_offline.sh "$APP/Contents/Info.plist"
+      # Byte-identical copies of Windows MeowTab's images/chill_*.png at commit ed4602f.
+      - name: Check bundled pictures
+        run: |
+          cd "$APP/Contents/Resources"
+          ls -l chill_few.png chill_some.png chill_many.png
+          shasum -a 256 -c <<'EOF'
+          a229aab81213bfb825f0772b9cc146e5464d7037687a30fd5c77fd317ab80e3e  chill_few.png
+          252ba163c7ea068ed5e7248c712e5d283f84c69a61bf5ef5ec381634d0b05529  chill_some.png
+          8f8fb5496462d48c83289e3f47f6a9f6dd53905146c8ea8235b642f7058095c0  chill_many.png
+          EOF
       - name: Package
         id: package
         run: |

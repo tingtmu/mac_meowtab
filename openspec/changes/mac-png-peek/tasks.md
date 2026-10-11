@@ -8,7 +8,8 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
   - the three test files' tests run on all three runners;
   - a new `build` step lists `MeowTab.app/Contents/Resources/chill_{few,some,many}.png`;
   - `shasum -a 256` of those files matches the Windows copies, with the expected hashes written in the step.
-- [ ] 1.2 Add the cat pictures' MIT notice ("Copyright (c) 2026 tingwei") to `docs/acknowledgments.md`, and a `### mac-png-peek` section to `NOTICE.md`'s Modifications, in the style of the `mac-fork-baseline` section. Verify by reading both.
+- [x] 1.2 Add the cat pictures' MIT notice ("Copyright (c) 2026 tingwei") to `docs/acknowledgments.md`, and a `### mac-png-peek` section to `NOTICE.md`'s Modifications, in the style of the `mac-fork-baseline` section. Verify by reading both.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38123337080 (`174f78b`): all seven jobs green. Both files read back; the licence paragraphs match Windows MeowTab's `LICENSE` word for word, one line each for the app's line-by-line Markdown renderer.
 
 ## 2. Mood and geometry (test-first)
 

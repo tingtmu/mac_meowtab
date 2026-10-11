@@ -37,7 +37,7 @@ What this fork changes from AltTab:
 
 CI (`.github/workflows/ci.yml`) builds a universal (arm64 and x86_64), ad-hoc-signed Release app with Xcode 26.0.1 and uses no secrets. It has four jobs:
 
-- `build` checks that `LICENCE.md` is unchanged from AltTab v11.9.0, builds the app, checks its architectures, signature and identity, checks the offline cuts, and uploads a zip.
+- `build` checks that `LICENCE.md` is unchanged from AltTab v11.9.0, builds the app, checks its architectures, signature and identity, checks the offline cuts and the bundled cat pictures, and uploads a zip.
 - `build-debug` compiles the Debug configuration too, so debug-only code can't break unnoticed.
 - `test` runs the unit tests on macOS 15 (Apple silicon), macOS 15 (Intel) and macOS 26 (Apple silicon).
 - `launch` installs the built app on the two macOS 15 runners, starts it, and checks that it stays running with no internet sockets and no crash report.
