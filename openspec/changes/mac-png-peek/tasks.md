@@ -4,10 +4,11 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
 
 ## 1. Skeleton
 
-- [ ] 1.1 Add the files of design.md 1 as compiling stubs. In each of the three test files, one trivial test asserts that `Mood.allCases.count == 3`. Copy the three PNGs from Windows MeowTab `images/` (commit `ed4602f`) to `resources/meowtab/`, then wire everything into `project.pbxproj` (design.md 10). Verify:
+- [x] 1.1 Add the files of design.md 1 as compiling stubs. In each of the three test files, one trivial test asserts that `Mood.allCases.count == 3`. Copy the three PNGs from Windows MeowTab `images/` (commit `ed4602f`) to `resources/meowtab/`, then wire everything into `project.pbxproj` (design.md 10). Verify:
   - the three test files' tests run on all three runners;
   - a new `build` step lists `MeowTab.app/Contents/Resources/chill_{few,some,many}.png`;
   - `shasum -a 256` of those files matches the Windows copies, with the expected hashes written in the step.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38123798922 (`2da3d61`): all seven jobs green. `MoodPeekTests`, `PeekPictureTests` and `MeowTabStoreTests` passed on macos-15, macos-15-intel and macos-26. Xcode's `copypng` left the pictures unchanged: "Check bundled pictures" printed `OK` for all three.
 - [x] 1.2 Add the cat pictures' MIT notice ("Copyright (c) 2026 tingwei") to `docs/acknowledgments.md`, and a `### mac-png-peek` section to `NOTICE.md`'s Modifications, in the style of the `mac-fork-baseline` section. Verify by reading both.
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38123337080 (`174f78b`): all seven jobs green. Both files read back; the licence paragraphs match Windows MeowTab's `LICENSE` word for word, one line each for the app's line-by-line Markdown renderer.
 
