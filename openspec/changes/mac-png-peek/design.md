@@ -217,7 +217,7 @@ All fixtures are generated at runtime into a fresh folder under `FileManager.def
   - the clamping rules;
   - `up(n)` for a 512² picture with art rows 200–312;
   - `reserve` is the maximum of the three moods;
-  - `s < 1` and `reserve ≤ 0.30 × 600` for a 600-pt usable height;
+  - `s = 1` and `reserve ≤ 0.30 × 600` for a 600-pt usable height, since a 160-pt box never needs more than 160 pt; `s < 1` and `reserve = 0.30 × 400` for a 400-pt one;
   - the pane cap;
   - pane `y` for a short and a tall pane;
   - peek frame bottom = pane top, `x` = pane `minX` + 24.

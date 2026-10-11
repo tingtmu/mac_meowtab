@@ -58,8 +58,8 @@ The picture's top SHALL stay at least 12 points below the top of the display's u
 - **THEN** the pane's grid scrolls rather than grows, and the whole visible part of the picture is inside the usable area
 
 #### Scenario: Very short usable area
-- **WHEN** the usable area is 600 points tall
-- **THEN** the picture is scaled so the reserved room is at most 180 points, and its visible part is still fully on screen
+- **WHEN** the usable area is 400 points tall
+- **THEN** the picture is scaled so the reserved room is at most 120 points, and its visible part is still fully on screen
 
 #### Scenario: A window closes while the switcher is open
 - **WHEN** closing a window changes the mood or the peek height
