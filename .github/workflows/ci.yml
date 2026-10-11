@@ -18,6 +18,10 @@ jobs:
       APP: DerivedData/Build/Products/Release/MeowTab.app
     steps:
       - uses: actions/checkout@v7
+      - name: Check licence unchanged
+        run: |
+          git fetch --no-tags --depth=1 origin 6d8940b5307d7348aaca70259c28147fc5ab00b3
+          git diff --exit-code FETCH_HEAD -- LICENCE.md
       - run: sudo xcode-select -s /Applications/Xcode_26.0.1.app
       - name: Write config/local.xcconfig
         run: |

@@ -1,5 +1,7 @@
 ## Acknowledgments
 
+MeowTab is based on [AltTab](https://github.com/lwouis/alt-tab-macos) by Louis Pontoise and contributors.
+
 These third-party libraries are used:
 
 **ShortcutRecorder**
