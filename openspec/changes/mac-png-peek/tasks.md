@@ -50,7 +50,7 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
     - `App.showUiOrCycleSelection` hides the peek while a cross-shortcut summon masks the pane.
     - `SearchDiscoveryHint` treats the attached peek as an obstruction, so the hint goes below the pane rather than over the cat.
   - **Acceptance:** the 10 listed rows, plus "Summon with another shortcut" and "Search hint and the peek", are in `docs/acceptance.md`.
-- [ ] 4.3 (optional, time-boxed to 3 hours) The CI screenshot spike of design.md 11, as a separate job that runs only on manual dispatch (`if: github.event_name == 'workflow_dispatch'`). Verify: either a screenshot artifact shows the peek above a 3-window switcher, or this task records which step failed and the job is removed.
+- [x] 4.3 (optional, time-boxed to 3 hours) The CI screenshot spike of design.md 11, as a separate job that runs only on manual dispatch (`if: github.event_name == 'workflow_dispatch'`). Verify: either a screenshot artifact shows the peek above a 3-window switcher, or this task records which step failed and the job is removed.
   - Job `screenshot`, commit `a003d81`. On pushes it is skipped (https://github.com/tingtmu/mac_meowtab/actions/runs/38132029610).
   - **Dispatch run** https://github.com/tingtmu/mac_meowtab/actions/runs/38132037826: every step passed on macos-15 and macos-15-intel.
     - SIP is disabled on both images.
@@ -60,7 +60,7 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
     - The peek logged `update 0.086 ms n=3` (arm64) and `update 0.272 ms n=3` (Intel).
     - Screens: 1024×768 on arm64, 1920×1080 on Intel.
   - **Caveat:** tccd credited the checks to the runner's `hosted-compute-agent`, because the app was started directly. So the run doesn't prove that MeowTab's own TCC rows work.
-  - **Still to confirm:** the owner reviews the screenshots (artifacts `peek-screenshot-macos-15` and `peek-screenshot-macos-15-intel`) on GitHub.
+  - **Screenshots** (artifacts `peek-screenshot-macos-15` and `peek-screenshot-macos-15-intel`), checked by the owner on GitHub and by the lead: on both runners the `some` cat, right for three windows, peeks above the switcher near the pane's left edge. Its art rises 74 px above the pane's top border on both screens (at 1x), as `share(3)` predicts for the shipped picture: 0.827 × 90 pt ≈ 74.5 pt. The job stays, dispatch-only.
 
 ## 5. MeowTab settings section
 
