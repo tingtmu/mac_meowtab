@@ -54,7 +54,9 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
 
 ## 5. MeowTab settings section
 
-- [ ] 5.1 `MeowTabSettingsTab`: the section entry and both cleanup calls in `SettingsWindow.swift` (design.md 8); the steppers, sliders, Restore defaults and the message line, wired to `MeowTabStore` and `PeekController.reload`. Verify: CI builds. Add the "First use", "Pushing a threshold" and "Restore defaults" scenarios of the `peek-settings` spec to the acceptance list, and add MeowTab to the section list in the existing "offline-app | Settings window" row.
+- [x] 5.1 `MeowTabSettingsTab`: the section entry and both cleanup calls in `SettingsWindow.swift` (design.md 8); the steppers, sliders, Restore defaults and the message line, wired to `MeowTabStore` and `PeekController.reload`. Verify: CI builds. Add the "First use", "Pushing a threshold" and "Restore defaults" scenarios of the `peek-settings` spec to the acceptance list, and add MeowTab to the section list in the existing "offline-app | Settings window" row.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38130661990 (`379a0ea`): all seven jobs green. Release and Debug both compile it; the third `SettingsWindow` cleanup call is in the Debug-only `qaDiscard`.
+  - **Acceptance:** the three rows are in `docs/acceptance.md`, plus "Hand-edited invalid values", whose message-line half isn't covered by unit tests. The Settings window row lists MeowTab.
 - [ ] 5.2 `PictureCard`: Choose… (`NSOpenPanel`, PNG only), drop target, Use default, background import, and the error messages of design.md 6. Verify: CI builds. Add every `peek-settings` import and storage scenario to the acceptance list.
 
 ## 6. Docs and close

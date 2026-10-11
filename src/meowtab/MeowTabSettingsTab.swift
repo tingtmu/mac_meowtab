@@ -1,11 +1,12 @@
 import Cocoa
+import UniformTypeIdentifiers
 
 /// The MeowTab section of Settings: a card per mood, where the moods begin, and how high the peek rises. Every
 /// change is saved at once and handed to `PeekController`, as AltTab's own settings apply immediately, so there is
 /// no Save or Cancel.
 class MeowTabSettingsTab {
     private static let percentFormat = NSLocalizedString("%d%%", comment: "MeowTab settings: a peek height, such as 80%")
-    private static var cardTitles = [Mood: NSTextField]()
+    private static var cards = [Mood: PictureCard]()
     /// Each stepper and slider, with the label that shows its value.
     private static var fieldViews = [Field: (control: NSControl, label: NSTextField)]()
     private static var messageLine: NSTextField?
@@ -24,17 +25,36 @@ class MeowTabSettingsTab {
     }
 
     static func cleanup() {
-        cardTitles.removeAll()
+        cards.removeAll()
         fieldViews.removeAll()
         messageLine = nil
     }
 
-    /// Each mood's title, centred in three equal columns across the row.
+    /// Saves an import's PNG as `mood`'s picture, or says why not. A failure changes nothing, so the card and the
+    /// peek keep their picture.
+    fileprivate static func finishImport(_ result: Result<Data, Error>, for mood: Mood) {
+        do {
+            try PeekController.store.setPicture(result.get(), for: mood)
+        } catch {
+            showMessage(importFailureMessage(error), isError: true)
+            return
+        }
+        pictureChanged()
+    }
+
+    /// After a picture is saved or cleared: the switcher decodes its pictures again, the cards show them, and the
+    /// message line is cleared.
+    fileprivate static func pictureChanged() {
+        PeekController.reload(picturesChanged: true)
+        refresh()
+        showMessage("", isError: false)
+    }
+
+    /// The three picture cards, in equal columns across the row.
     private static func makeCardsRow() -> NSView {
-        let titles = Mood.allCases.map { _ in NSTextField(labelWithString: "") }
-        titles.forEach { $0.alignment = .center }
-        cardTitles = Dictionary(uniqueKeysWithValues: zip(Mood.allCases, titles))
-        let row = NSStackView(views: titles)
+        let newCards = Mood.allCases.map { PictureCard($0) }
+        cards = Dictionary(uniqueKeysWithValues: zip(Mood.allCases, newCards))
+        let row = NSStackView(views: newCards)
         row.distribution = .fillEqually
         row.translatesAutoresizingMaskIntoConstraints = false
         row.widthAnchor.constraint(equalToConstant: SettingsWindow.contentWidth - 2 * TableGroupView.padding).isActive = true
@@ -112,7 +132,7 @@ class MeowTabSettingsTab {
         showWarnings()
     }
 
-    /// Shows the settings in use in every control, value label and card title.
+    /// Shows the settings and pictures in use in every control, value label and card.
     private static func refresh() {
         let settings = PeekController.settings
         for (field, views) in fieldViews {
@@ -120,8 +140,8 @@ class MeowTabSettingsTab {
             views.control.integerValue = number
             views.label.stringValue = field.isShare ? String(format: percentFormat, number) : "\(number)"
         }
-        for (mood, title) in cardTitles {
-            title.stringValue = cardTitle(mood, settings)
+        for (mood, card) in cards {
+            card.refresh(title: cardTitle(mood, settings))
         }
     }
 
@@ -134,6 +154,30 @@ class MeowTabSettingsTab {
     private static func showMessage(_ text: String, isError: Bool) {
         messageLine?.stringValue = text
         messageLine?.textColor = isError ? .systemRed : .secondaryLabelColor
+    }
+
+    /// Why an import failed: what `PeekPicture.load` refused the file for, or that saving it failed.
+    private static func importFailureMessage(_ error: Error) -> String {
+        guard let refusal = error as? PeekPicture.LoadError else {
+            return NSLocalizedString("The picture couldn't be saved.", comment: "MeowTab import message")
+        }
+        switch refusal {
+        case .tooBig:
+            return NSLocalizedString("That file is over 10 MB.", comment: "MeowTab import message")
+        case .notPNG:
+            return NSLocalizedString("Choose a PNG picture. GIFs and other formats aren't supported yet.",
+                                     comment: "MeowTab import message")
+        case .animated:
+            return NSLocalizedString("Animated PNGs aren't supported yet. Choose a still PNG.",
+                                     comment: "MeowTab import message")
+        case .tooLarge:
+            return NSLocalizedString("That picture is too large (at most 8192 px a side and 32 megapixels).",
+                                     comment: "MeowTab import message")
+        case .unreadable:
+            return NSLocalizedString("That file can't be read as a picture.", comment: "MeowTab import message")
+        case .empty:
+            return NSLocalizedString("That picture is fully transparent.", comment: "MeowTab import message")
+        }
     }
 
     /// The mood, then the window counts it covers: "Few · 1–2 windows".
@@ -209,4 +253,111 @@ class MeowTabSettingsTab {
             }
         }
     }
+}
+
+/// One mood's card: its picture, its title, Choose… and Use default. A file dropped on the card is imported, and
+/// the import's checks decide whether the peek can use it.
+private final class PictureCard: NSStackView {
+    let mood: Mood
+    private let pictureView = PictureView()
+    private let titleLabel = NSTextField(labelWithString: "")
+    private let chooseButton = NSButton(title: NSLocalizedString("Choose…", comment: "MeowTab settings button"),
+                                        target: nil, action: nil)
+    private let defaultButton = NSButton(title: NSLocalizedString("Use default", comment: "MeowTab settings button"),
+                                         target: nil, action: nil)
+    /// While a picture is checked and converted, the card's buttons are off and it takes no drop.
+    private var isImporting = false {
+        didSet {
+            chooseButton.isEnabled = !isImporting
+            defaultButton.isEnabled = !isImporting
+        }
+    }
+
+    init(_ mood: Mood) {
+        self.mood = mood
+        super.init(frame: .zero)
+        orientation = .vertical
+        alignment = .centerX
+        pictureView.imageScaling = .scaleProportionallyUpOrDown
+        pictureView.translatesAutoresizingMaskIntoConstraints = false
+        pictureView.widthAnchor.constraint(equalToConstant: 96).isActive = true
+        pictureView.heightAnchor.constraint(equalToConstant: 96).isActive = true
+        titleLabel.alignment = .center
+        chooseButton.onAction = { [weak self] _ in self?.choosePicture() }
+        defaultButton.onAction = { [weak self] _ in self?.useDefault() }
+        setViews([pictureView, titleLabel, NSStackView(views: [chooseButton, defaultButton])], in: .top)
+        // each label names the mood, or VoiceOver would hear the same three controls on every card
+        let pictureFormat = NSLocalizedString("Picture for “%@”", comment: "MeowTab; %@ is a mood: few, some or many")
+        let chooseFormat = NSLocalizedString("Choose a picture for “%@”", comment: "MeowTab; %@ is a mood")
+        let defaultFormat = NSLocalizedString("Use the default picture for “%@”", comment: "MeowTab; %@ is a mood")
+        pictureView.setAccessibilityLabel(String(format: pictureFormat, mood.rawValue))
+        chooseButton.setAccessibilityLabel(String(format: chooseFormat, mood.rawValue))
+        defaultButton.setAccessibilityLabel(String(format: defaultFormat, mood.rawValue))
+        registerForDraggedTypes([.fileURL])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("Class only supports programmatic initialization")
+    }
+
+    /// Shows `title`, the picture in use for the mood, and Use default only while that picture is the user's.
+    func refresh(title: String) {
+        titleLabel.stringValue = title
+        pictureView.image = PeekController.pictures[mood].map { NSImage(cgImage: $0.image, size: .zero) }
+        defaultButton.isHidden = PeekController.store.pictureURL(mood) == nil
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard !isImporting, droppedFile(sender) != nil else { return [] }
+        return .copy
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard !isImporting, let url = droppedFile(sender) else { return false }
+        importPicture(url)
+        return true
+    }
+
+    /// The one file dragged in; nil for several files, or for something that isn't a file.
+    private func droppedFile(_ sender: NSDraggingInfo) -> URL? {
+        let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self],
+                                                         options: [.urlReadingFileURLsOnly: true]) as? [URL]
+        guard let urls, urls.count == 1 else { return nil }
+        return urls[0]
+    }
+
+    private func choosePicture() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.png]
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        importPicture(url)
+    }
+
+    private func useDefault() {
+        PeekController.store.clearPicture(mood)
+        MeowTabSettingsTab.pictureChanged()
+    }
+
+    /// Checks and converts the file off the main thread, then saves it, or says why not, on the main thread.
+    private func importPicture(_ url: URL) {
+        isImporting = true
+        let mood = self.mood // not read from the card, which is gone if Settings closes first; the import still saves
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let result = Result { () throws -> Data in
+                guard let png = try PeekPicture.load(url: url).pngData() else { throw CocoaError(.fileWriteUnknown) }
+                return png
+            }
+            DispatchQueue.main.async {
+                self?.isImporting = false
+                MeowTabSettingsTab.finishImport(result, for: mood)
+            }
+        }
+    }
+}
+
+/// The card's picture. AppKit's image view can register drag types of its own even when it isn't editable, and then
+/// refuse a drop meant for the card; this one never registers, so a file dragged over the picture reaches the card.
+private final class PictureView: NSImageView {
+    override func registerForDraggedTypes(_ newTypes: [NSPasteboard.PasteboardType]) {}
 }
