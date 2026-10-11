@@ -54,6 +54,7 @@ class TilesPanel: NSPanel {
             setContentSize(TilesView.contentView.frame.size)
             guard SwitcherSession.isActive else { return }
             repositionOrFreeze()
+            PeekController.update(paneFrame: frame, screen: NSScreen.preferred) // MeowTab: the peek follows the pane's final frame
         }
         // prevent further AppKit work
         TilesView.clearNeedsLayout()
@@ -64,12 +65,12 @@ class TilesPanel: NSPanel {
     private func repositionOrFreeze() {
         let size = frame.size
         guard TilesView.isSearchModeOn else {
-            NSScreen.preferred.repositionPanel(self)
+            PeekController.positionPane(self, on: NSScreen.preferred) // MeowTab: leaves room above the pane for the peek
             resetFrozenPosition()
             return
         }
         if size.height > highWaterHeight {
-            NSScreen.preferred.repositionPanel(self)
+            PeekController.positionPane(self, on: NSScreen.preferred) // MeowTab: leaves room above the pane for the peek
             highWaterHeight = size.height
             frozenTopCenter = NSPoint(x: frame.midX, y: frame.maxY)
         } else if let topCenter = frozenTopCenter {
@@ -84,6 +85,7 @@ class TilesPanel: NSPanel {
 
     override func orderOut(_ sender: Any?) {
         MainThreadStall.step()
+        PeekController.hide() // MeowTab: the peek goes at once, before the fade
         SearchDiscoveryHint.shared.cancel()
         TilesView.clearNeedsLayout()
         if Preferences.fadeOutAnimation {
@@ -115,6 +117,7 @@ class TilesPanel: NSPanel {
         // and Appearance are in their final state.
         alphaValue = 1
         makeKeyAndOrderFront(nil)
+        PeekController.show() // MeowTab: the peek appears with the pane
         // The artificial key-repeat measures its initial-delay grace from when the panel could be SEEN, and this
         // is the only anchor for that which is guaranteed to exist — see `SwitcherSession.panelShownAt`. Set
         // once per summon (a re-show within one session must not restart the grace under the user's fingers).
@@ -142,7 +145,7 @@ class TilesPanel: NSPanel {
     }
 
     static func maxThumbnailsHeight(_ screen: NSScreen = NSScreen.preferred) -> CGFloat {
-        return (screen.frame.height * Appearance.maxHeightOnScreen - Appearance.windowPadding * 2).rounded()
+        return min((screen.frame.height * Appearance.maxHeightOnScreen - Appearance.windowPadding * 2).rounded(), PeekController.maxContentHeight(screen)) // MeowTab: room for the peek
     }
 
     static func updateMaxPossibleThumbnailSize() {

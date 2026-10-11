@@ -159,7 +159,7 @@ final class SearchDiscoveryHint {
         let preview = PreviewPanel.shared
         return SearchDiscoveryPolicy.frame(size: size, switcher: TilesPanel.shared.frame,
                                            visibleScreen: screen.visibleFrame,
-                                           obstruction: preview?.isVisible == true ? preview?.frame : nil)
+                                           obstruction: preview?.isVisible == true ? preview?.frame : PeekController.attachedFrame) // MeowTab: the hint keeps clear of the peek
     }
 
     /// The switcher's own kind of background, so the hint reads as part of it. Rebuilt when that kind

@@ -23,5 +23,5 @@ Listed by [OpenSpec](openspec/) change name. Later changes are appended here.
 
 - **The peek:** a cat picture on the switcher's top-left edge, with three moods by window count. The switcher's pane leaves room so the picture always fits on screen.
 - **Settings:** a MeowTab section, first in the Settings sidebar, sets each mood's picture, the mood thresholds and the peek height. Users' own PNGs are copied to `~/Library/Application Support/MeowTab/images/`.
-- **Upstream code:** one-line hooks, each marked `// MeowTab:`, in `src/App.swift`, `src/switcher/main-window/TilesPanel.swift` and `src/preferences/settings-window/SettingsWindow.swift`. The new code is in `src/meowtab/`.
+- **Upstream code:** one-line hooks, each marked `// MeowTab:`, in `src/App.swift`, `src/switcher/main-window/TilesPanel.swift`, `src/switcher/search-discovery/SearchDiscoveryHint.swift` and `src/preferences/settings-window/SettingsWindow.swift`. The new code is in `src/meowtab/`.
 - **Pictures:** the three cat PNGs from Windows MeowTab (MIT licence, see `docs/acknowledgments.md`) ship in `resources/meowtab/`.

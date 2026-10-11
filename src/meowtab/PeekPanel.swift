@@ -37,10 +37,10 @@ final class PeekPanel: NSPanel {
     }
 }
 
-/// Puts the peek panel on the pane's top edge. Main thread only, inside the app's own calls: `setUp` from `App`,
-/// `reload` from the settings section, the rest from hooks in `TilesPanel`. There is no timer and no async work,
-/// so a dismissed session leaves nothing behind. `panel` is nil until `setUp` has run, and while it is, every hook
-/// leaves the switcher as upstream's.
+/// Puts the peek panel on the pane's top edge. Main thread only, inside the app's own calls: `setUp` and one `hide`
+/// from `App`, `attachedFrame` from `SearchDiscoveryHint`, `reload` from the settings section, and the rest from hooks
+/// in `TilesPanel`. There is no timer and no async work, so a dismissed session leaves nothing behind. `panel` is nil
+/// until `setUp` has run, and while it is, every hook leaves the switcher as upstream's.
 class PeekController {
     /// MeowTab's settings, and its copies of the user's pictures.
     static let store = MeowTabStore(defaults: .standard, folder: FileManager.default
@@ -67,7 +67,7 @@ class PeekController {
     private static var applied: Inputs?
     /// Whose picture the image layer holds, framed by the last `update`; nil when that update had nothing to show.
     private static var shown: Shown?
-    /// Between `show()` and `hide()`: the pane is on screen, unless a cross-shortcut rebuild has masked it.
+    /// Between `show()` and `hide()`, which is while the pane is on screen and not masked.
     private static var paneShown = false
 
     /// Once, at launch, right after `TilesPanel` is created.
@@ -138,8 +138,9 @@ class PeekController {
         attach(panel)
     }
 
-    /// First thing in `TilesPanel.orderOut`, before upstream's fade, so the picture never outlasts the pane. The next
-    /// session's first `update` applies everything again.
+    /// First thing in `TilesPanel.orderOut`, before upstream's fade, so the picture never outlasts the pane; and when a
+    /// summon with another shortcut masks the pane for its rebuild, until `show()`. The next `update` applies
+    /// everything again.
     static func hide() {
         paneShown = false
         applied = nil
@@ -164,6 +165,12 @@ class PeekController {
     static func maxContentHeight(_ screen: NSScreen) -> CGFloat {
         guard panel != nil else { return .greatestFiniteMagnitude }
         return peekGeometry(screen.visibleFrame).maxContentHeight(windowPadding: Appearance.windowPadding)
+    }
+
+    /// The peek panel's frame while it is attached to the pane, else nil. The search hint keeps clear of it.
+    static var attachedFrame: NSRect? {
+        guard let panel, panel.parent != nil else { return nil }
+        return panel.frame
     }
 
     private static func peekGeometry(_ visibleFrame: NSRect) -> PeekGeometry {

@@ -49,7 +49,8 @@ None.
   - tests next to them: `MoodPeekTests.swift`, `PeekPictureTests.swift`, `MeowTabStoreTests.swift`.
 - **New resources:** `resources/meowtab/chill_few.png`, `chill_some.png` and `chill_many.png`, copied byte for byte from Windows MeowTab.
 - **Upstream files, small hooks only:**
-  - `src/App.swift`: one line after `_ = TilesPanel()` at :527;
+  - `src/App.swift`: one line after `_ = TilesPanel()` at :527, and one in `showUiOrCycleSelection` at :416 that hides the picture while a summon with another shortcut masks the pane;
   - `src/switcher/main-window/TilesPanel.swift`: `updateContents`, `repositionOrFreeze`, `orderOut`, `show`, `maxThumbnailsHeight`;
+  - `src/switcher/search-discovery/SearchDiscoveryHint.swift`: one line in `prepareFrame`, so the search hint moves below the pane instead of covering the picture;
   - `src/preferences/settings-window/SettingsWindow.swift`: one section entry and two cleanup calls.
 - **Project and docs:** `alt-tab-macos.xcodeproj/project.pbxproj` (new files, the group and build phases); `docs/acknowledgments.md` (the cat pictures' MIT notice); `README.md` (the peek and own pictures); `ROADMAP.md`.

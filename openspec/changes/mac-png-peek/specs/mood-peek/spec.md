@@ -74,7 +74,7 @@ The picture SHALL appear when the pane appears, and SHALL disappear as soon as t
 
 #### Scenario: Clicking where the picture is
 - **WHEN** the user clicks on the picture while the switcher is open
-- **THEN** the click acts as a click on whatever is under the picture
+- **THEN** the picture doesn't take the click: it counts as a click outside the pane, as if the picture weren't there
 
 #### Scenario: VoiceOver
 - **WHEN** VoiceOver moves through the open switcher

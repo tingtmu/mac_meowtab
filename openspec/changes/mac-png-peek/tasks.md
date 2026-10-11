@@ -21,17 +21,23 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
 
 ## 3. Pictures and storage (test-first)
 
-- [ ] 3.1 `PeekPicture.load(url:)` with the steps and errors of design.md 6, plus `pngData()`. Write the `PeekPictureTests` cases, with their runtime fixtures, first. Verify: all pass on all three runners. Note under this task whether the APNG case passed through `CGImageSourceGetCount`, or needed the `acTL` fallback.
-- [ ] 3.2 `MeowTabStore` (design.md 7): keys, `load()` with warnings, `setPicture`, `clearPicture`, `restoreDefaults`, `removeOrphans`. Write the `MeowTabStoreTests` cases first. Verify: all pass on all three runners, and nothing outside the temporary suite or folder is written (the tests assert that `UserDefaults.standard` has no `meowtab.` key afterwards).
+- [x] 3.1 `PeekPicture.load(url:)` with the steps and errors of design.md 6, plus `pngData()`. Write the `PeekPictureTests` cases, with their runtime fixtures, first. Verify: all pass on all three runners. Note under this task whether the APNG case passed through `CGImageSourceGetCount`, or needed the `acTL` fallback.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38128856406 (`1a7cf87`): all seven jobs green. All 11 `PeekPictureTests` cases pass on macos-15, macos-15-intel and macos-26.
+  - **APNG:** `CGImageSourceGetCount` reports both frames of the APNG that ImageIO writes, so `testTwoFrameAPNGIsAnimated` passes without the `acTL` fallback, which was not added.
+  - **Truncated files:** a missing `IEND` chunk, rather than ImageIO's frame status, marks them unreadable (design.md 6).
+- [x] 3.2 `MeowTabStore` (design.md 7): keys, `load()` with warnings, `setPicture`, `clearPicture`, `restoreDefaults`, `removeOrphans`. Write the `MeowTabStoreTests` cases first. Verify: all pass on all three runners, and nothing outside the temporary suite or folder is written (the tests assert that `UserDefaults.standard` has no `meowtab.` key afterwards).
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38128868194 (`0b4b5fb`): all seven jobs green. All 15 `MeowTabStoreTests` cases pass on all three runners (1538 tests, 0 failures, on each). `tearDown` asserts that `UserDefaults.standard` has no `meowtab.` key after every test. Picture names that aren't MeowTab's own `<mood>-<UUID>.png` are never read or deleted.
 
 ## 4. The peek in the switcher
 
-- [ ] 4.1 `PeekPanel` and `PeekController` (design.md 5 and 7):
+- [x] 4.1 `PeekPanel` and `PeekController` (design.md 5 and 7):
   - `setUp()`, `reload()` with fallback warnings, `update`, `show`, `hide`, `positionPane` and `maxContentHeight`;
   - the timing log;
   - the `App.swift:527` hook.
 
   Verify: CI builds with no warnings, and the launch job passes.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38129165308 (`6988de1`): all seven jobs green. Release (universal) and Debug compile with warnings as errors, and both launch jobs pass.
+  - Until `setUp` has run, every hook leaves the switcher as upstream's. A shipped picture that fails to load is logged, and the peek stays off rather than crashing.
 - [ ] 4.2 The five `TilesPanel.swift` hooks of design.md 5, each one line marked `// MeowTab:`. Verify:
   - CI builds;
   - upstream's tile-layout tests still pass;

@@ -23,7 +23,7 @@ Windows MeowTab reference:
 - **Mood rules:** `SOME_FROM` 3, `MANY_FROM` 8, `PEEK_MIN` 0.80, `PEEK_MAX` 0.95, `PeekShare(n)` (`meowtab.ahk:19-23, 313-314`).
 - **Rows above the pane:** `top + (bottom - top) * share` over the art span (`meowtab.ahk:297`).
 - **Picture placement:** 24 px in from the pane's left edge (`PEEK_X`) and 250 px wide at 150 % scaling.
-- **Shipped pictures:** 512×512 with centred art 482–484 px tall, where "art" means alpha > 24 (`openspec/specs/mood-pictures/spec.md` there).
+- **Shipped pictures:** 512×512, where "art" means alpha > 24 (`openspec/specs/mood-pictures/spec.md` there). Each cat's art spans 472–484 px on its longer side. Measured here: few's art is rows 51–460 (410 tall, 484 wide), some's rows 112–399 (288 tall, 484 wide), and many's rows 14–496 (483 tall, 472 wide).
 
 ## Goals / Non-Goals
 
@@ -124,11 +124,13 @@ Upstream edits are one line each, marked `// MeowTab:`.
 | Where | Edit |
 | --- | --- |
 | `App.swift:527`, after `_ = TilesPanel()` | `PeekController.setUp()` removes orphans, loads pictures and creates the panel |
+| `App.showUiOrCycleSelection`, after `TilesPanel.shared.alphaValue = 0` (`App.swift:416`) | `PeekController.hide()`. A summon with another shortcut masks the pane at alpha 0 while it rebuilds, through the display delay (100 ms by default); without this, the attached picture would stay on screen with no pane under it. `show()` brings it back. Upstream cancels its search hint on the same path. |
 | `TilesPanel.updateContents`, after `repositionOrFreeze()` (`:56`), inside the transaction | `PeekController.update(paneFrame: frame, screen: NSScreen.preferred)` |
 | `TilesPanel.repositionOrFreeze` `:67` and `:72` | `NSScreen.preferred.repositionPanel(self)` → `PeekController.positionPane(self, on: NSScreen.preferred)` |
 | `TilesPanel.orderOut`, first line after `MainThreadStall.step()` (`:86`) | `PeekController.hide()`, before upstream's fade, so the picture never lingers |
 | `TilesPanel.show()`, after `makeKeyAndOrderFront(nil)` (`:117`) | `PeekController.show()`: set `level = TilesPanel.shared.level`, `addChildWindow(panel, ordered: .above)` when there is a mood |
 | `TilesPanel.maxThumbnailsHeight` (`:145`) | wrap in `min(…, PeekController.maxContentHeight(screen))` |
+| `SearchDiscoveryHint.prepareFrame` (`SearchDiscoveryHint.swift:162`) | `obstruction:` becomes `preview?.isVisible == true ? preview?.frame : PeekController.attachedFrame`, the peek panel's frame while it is attached to the pane. The search hint's first place is just above the pane, in the peek's room, so it would cover the picture whenever it shows; it needs 8 windows, so the peek is always up then. With the peek as the obstruction, upstream's policy moves the hint below the pane, and only when the two would overlap. Previews are off by default; while one shows, it stays the obstruction. |
 
 Behaviour of the controller:
 
