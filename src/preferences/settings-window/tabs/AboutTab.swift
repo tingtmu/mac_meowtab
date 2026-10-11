@@ -13,6 +13,7 @@ class AboutTab {
             NSTextField(wrappingLabelWithString: App.licence),
             HyperlinkLabel(NSLocalizedString("Website", comment: ""), Endpoints.website),
             HyperlinkLabel(NSLocalizedString("Source code", comment: ""), App.repository),
+            HyperlinkLabel(NSLocalizedString("Based on AltTab", comment: ""), "https://github.com/lwouis/alt-tab-macos"),
         ], .vertical)
         appText.spacing = GridView.interPadding / 2
         let rowToSeparate = 3
@@ -36,7 +37,7 @@ class AboutTab {
     }
 
     static func makeSupportProjectButton() -> NSButton {
-        let button = makeButtonWithIcon(NSLocalizedString("Support this project", comment: ""), App.supportProjectAction, "heart.fill", .red, App.self)
+        let button = makeButtonWithIcon(NSLocalizedString("Sponsor AltTab's author", comment: ""), App.supportProjectAction, "heart.fill", .red, App.self)
         styleSupportProjectButton(button)
         return button
     }

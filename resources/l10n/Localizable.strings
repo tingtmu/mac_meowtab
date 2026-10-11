@@ -203,6 +203,9 @@
 "Automatic activation failed" = "Automatic activation failed";
 
 /* No comment provided by engineer. */
+"Based on AltTab" = "Based on AltTab";
+
+/* No comment provided by engineer. */
 "Brief description of the bug" = "Brief description of the bug";
 
 /* No comment provided by engineer. */
@@ -775,6 +778,9 @@
 
 /* No comment provided by engineer. */
 "Space Order" = "Space Order";
+
+/* No comment provided by engineer. */
+"Sponsor AltTab's author" = "Sponsor AltTab's author";
 
 /* No comment provided by engineer. */
 "Start" = "Start";

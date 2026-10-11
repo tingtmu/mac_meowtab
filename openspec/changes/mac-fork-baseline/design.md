@@ -112,7 +112,7 @@ Upstream's Pro and trial tests run on their testable kernels, not on `LicenseMan
 - **About window:**
   - "Source code" links the fork: `App.swift:17` becomes `https://github.com/tingtmu/mac_meowtab`.
   - A new "Based on AltTab" link points to upstream (`AboutTab.swift:10-16`).
-  - The support button becomes "Sponsor AltTab's author" and opens github.com/sponsors/lwouis (`AboutTab.swift:39`, and `App.supportProject` at `App.swift:145-147`).
+  - The support button becomes "Sponsor AltTab's author" and opens github.com/sponsors/lwouis (`AboutTab.swift:39`; `App.supportProject` at `App.swift:145-147` opens `Endpoints.supportUrl`, `src/api/Endpoints.swift:8`, whose value changes).
 - **Kept as is:** `LICENCE.md` (CI checks it is identical to upstream's), the copyright string (`Info.plist:20-21`), and `docs/acknowledgments.md`. That file gains one line naming AltTab; it is bundled and shown in the app.
 - **Corresponding Source (§6):** every binary links the exact tagged source. This is set up in `mac-preview-release`.
 

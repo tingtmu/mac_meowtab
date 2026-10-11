@@ -66,6 +66,7 @@
 "Auto-install updates periodically" = "Auto-install updates periodically";
 "Auto-sizing switcher" = "Auto-sizing switcher";
 "Automatic activation failed" = "Automatic activation failed";
+"Based on AltTab" = "Based on AltTab";
 "Brief description of the bug" = "Brief description of the bug";
 "Brief description of the change" = "Brief description of the change";
 "Bundle ID" = "Bundle ID";
@@ -257,6 +258,7 @@
 "Some Pro features have reverted to free defaults." = "Some Pro features have reverted to free defaults.";
 "Source code" = "Source code";
 "Space Order" = "Space Order";
+"Sponsor AltTab's author" = "Sponsor AltTab's author";
 "Start" = "Start";
 "Start at login" = "Start at login";
 "Start my 14-day trial" = "Start my 14-day trial";
