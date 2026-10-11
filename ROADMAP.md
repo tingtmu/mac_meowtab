@@ -108,6 +108,7 @@ Once a change is archived, its specs live in `openspec/specs/`. Later picture wo
 - Decide, from the tester's and users' feedback, which AltTab features to drop. Candidates are search, extra shortcut profiles, the app-icon and title styles, trackpad gestures, the command-line interface, the minimize/fullscreen/quit tile buttons and the full-size preview. Keep window discovery, permissions, Spaces, displays and closing windows.
 - Remove each dropped feature at its entry points and settings in small steps, each green on CI, with upstream's tests for it removed alongside.
 - Unlink the Sparkle and AppCenter packages: the project file, the Embed and Copy Sparkle Helpers phases, and the seven Swift files that import them.
+- Remove the code `mac-fork-baseline` left inert: the Settings `upgradeButton` and its refresh and shine code, the menubar licence items and `UpgradeMenuItemView`, `App.upgradeToPro`, the `updatesPolicyDropdown` and `crashPolicyDropdown` statics, the Upgrade tab, `FeedbackWindow`, the licence client, and the strings only they use.
 - Weigh the cost of merging later upstream releases. Every removal makes merges harder.
 
 **Done when:** Settings shows only what is kept; no removed feature can be reached from the menubar, the shortcuts or the switcher; the app bundle has no Sparkle or AppCenter; and a real-Mac candidate passes the MVP's switching and peek checks again.

@@ -55,15 +55,18 @@ All work happens in the `tingtmu/mac_meowtab` repository, checked out in this fo
 
   Verify: build, test and `launch` pass on both architectures; the launch job is what catches a startup crash from the superclass change.
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38108861497 (`15b3fd4`): green, both launch jobs included. `NSApplicationCrashOnExceptions` is registered where `AppCenterCrash` used to do it, keeping upstream's crash-on-exception behaviour.
-- [ ] 3.3 Licence and Pro (design.md 3–4):
+- [x] 3.3 Licence and Pro (design.md 3–4):
   - the `ProLicenseManager` subclass behind `LicenseManager.shared` (design.md 4);
   - delete `App.swift:677-702`;
   - remove the Upgrade entry (`SettingsWindow.swift:319`, `536-553`);
   - remove `Menubar.swift:45-49`.
 
   Verify: the upstream test suite passes unchanged on all three runners. Add the `offline-app` "Weeks after installing" and "Settings window" scenarios, and the "Both apps installed" scenario of `fork-identity`, to `docs/acceptance.md`.
-- [ ] 3.4 Add `scripts/meowtab/check_offline.sh` with the checks of design.md 3, and run it from `build` as `bash scripts/meowtab/check_offline.sh`. Verify: it passes on `main`. On a throwaway branch, restoring `App.swift:604` (`App.appCenterDelegate = AppCenterCrash()`) makes it fail. Delete that branch.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38109230182 (`14c2143`): green; `LicenseManagerTests` and the rest of the suite unchanged and passing on all three runners; both launch jobs green. The three acceptance rows are added.
+- [x] 3.4 Add `scripts/meowtab/check_offline.sh` with the checks of design.md 3, and run it from `build` as `bash scripts/meowtab/check_offline.sh`. Verify: it passes on `main`. On a throwaway branch, restoring `App.swift:604` (`App.appCenterDelegate = AppCenterCrash()`) makes it fail. Delete that branch.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38109443814 (`08f34d6`): `check_offline: OK (source checks and plist checks)`. Negative run locally in Git Bash on a throwaway branch: the restored line fails with `found 'AppCenterCrash()' at src/App.swift:577`; reverting `ProLicenseManager(`, re-adding `upgradeButtonClicked`, `checkForUpdatesNow`, `App.showFeedbackPanel` and the menu titles each fail too. Branch deleted.
 
 ## 4. Close
 
-- [ ] 4.1 Confirm the `mac-ci` spec end to end on the latest `main` run: artifact, three test jobs with summaries, two launch jobs, and the offline and licence checks. Then archive this change (`openspec archive mac-fork-baseline`), so its specs land in `openspec/specs/` before `mac-png-peek` starts.
+- [x] 4.1 Confirm the `mac-ci` spec end to end on the latest `main` run: artifact, three test jobs with summaries, two launch jobs, and the offline and licence checks. Then archive this change (`openspec archive mac-fork-baseline`), so its specs land in `openspec/specs/` before `mac-png-peek` starts.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38109443814 (`08f34d6`): artifact `MeowTab-08f34d6.zip` (5.3 MB, `ditto`), `lipo` `x86_64 arm64`, `codesign` valid, no secrets used; test summaries macOS 15.7.9 arm64, 15.7.9 x86_64 and 26.6.2 arm64, all Xcode 26.0.1 (17A400); both launch jobs green; licence and offline checks green. The pull-request trigger is configured but hasn't run yet; it uses the same secret-free jobs.

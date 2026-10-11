@@ -173,6 +173,8 @@ Without permissions, the app stops at its permission screen. So this job proves 
 - **Ad-hoc signatures change on every build, so macOS forgets Accessibility and Screen Recording grants** → Acceptable for CI artifacts. `mac-preview-release` signs with one stable identity.
 - **Hidden upgrade surfaces in `.pro`** (e.g. a Pro badge leading to `SettingsWindow.swift:1322`) → Acceptance checks that no upgrade or account view can be reached. Any that is found is removed the same way as above.
 - **Upstream moves on** → `main` is pinned. Merging a newer upstream tag is a separate, deliberate change.
+- **The launch check can't see traffic that starts after permissions are granted** (upstream AltTab passed it too, because Sparkle started 30 s after permissions) → The static guard covers each cut, and `docs/acceptance.md` has a manual "No traffic after permissions" row for the real Mac.
+- **DEBUG QA lifecycle harness** (`src/debug/QaLifecycle.swift`) can no longer drive trial states, because `ProLicenseManager` reports Pro unless a mock is set → Accepted: DEBUG-only, and the mock trial days still work.
 - **No macOS 12–14 runtime evidence** → The README states the target (12.0+) apart from what was tested (CI: 15 on arm64 and Intel, 26 on arm64; plus the final real Mac).
 
 ## Open Questions
