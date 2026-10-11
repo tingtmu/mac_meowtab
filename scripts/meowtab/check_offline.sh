@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Guards MeowTab's offline cuts (no updater, crash reports, licence server, feedback or licence menu items) against being undone.
-# What it checks and why: openspec/changes/mac-fork-baseline/design.md section 3. Usage: bash scripts/meowtab/check_offline.sh [built/Info.plist]
+# What it checks and why: openspec/changes/archive/2026-10-11-mac-fork-baseline/design.md section 3. Usage: bash scripts/meowtab/check_offline.sh [built/Info.plist]
 set -u
 cd "$(dirname "$0")/../.." || exit 1
 status=0
