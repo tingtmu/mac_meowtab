@@ -51,21 +51,37 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
     - `SearchDiscoveryHint` treats the attached peek as an obstruction, so the hint goes below the pane rather than over the cat.
   - **Acceptance:** the 10 listed rows, plus "Summon with another shortcut" and "Search hint and the peek", are in `docs/acceptance.md`.
 - [ ] 4.3 (optional, time-boxed to 3 hours) The CI screenshot spike of design.md 11, as a separate job that runs only on manual dispatch (`if: github.event_name == 'workflow_dispatch'`). Verify: either a screenshot artifact shows the peek above a 3-window switcher, or this task records which step failed and the job is removed.
+  - Job `screenshot`, commit `a003d81`. On pushes it is skipped (https://github.com/tingtmu/mac_meowtab/actions/runs/38132029610).
+  - **Dispatch run** https://github.com/tingtmu/mac_meowtab/actions/runs/38132037826: every step passed on macos-15 and macos-15-intel.
+    - SIP is disabled on both images.
+    - Rows were written to the system TCC.db (17 columns).
+    - The app logged "System permissions are granted; continuing launch".
+    - With the switcher open, `--qa-state` reported `switcherVisible: true` over three TextEdit tiles.
+    - The peek logged `update 0.086 ms n=3` (arm64) and `update 0.272 ms n=3` (Intel).
+    - Screens: 1024×768 on arm64, 1920×1080 on Intel.
+  - **Caveat:** tccd credited the checks to the runner's `hosted-compute-agent`, because the app was started directly. So the run doesn't prove that MeowTab's own TCC rows work.
+  - **Still to confirm:** the owner reviews the screenshots (artifacts `peek-screenshot-macos-15` and `peek-screenshot-macos-15-intel`) on GitHub.
 
 ## 5. MeowTab settings section
 
 - [x] 5.1 `MeowTabSettingsTab`: the section entry and both cleanup calls in `SettingsWindow.swift` (design.md 8); the steppers, sliders, Restore defaults and the message line, wired to `MeowTabStore` and `PeekController.reload`. Verify: CI builds. Add the "First use", "Pushing a threshold" and "Restore defaults" scenarios of the `peek-settings` spec to the acceptance list, and add MeowTab to the section list in the existing "offline-app | Settings window" row.
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38130661990 (`379a0ea`): all seven jobs green. Release and Debug both compile it; the third `SettingsWindow` cleanup call is in the Debug-only `qaDiscard`.
   - **Acceptance:** the three rows are in `docs/acceptance.md`, plus "Hand-edited invalid values", whose message-line half isn't covered by unit tests. The Settings window row lists MeowTab.
-- [ ] 5.2 `PictureCard`: Choose… (`NSOpenPanel`, PNG only), drop target, Use default, background import, and the error messages of design.md 6. Verify: CI builds. Add every `peek-settings` import and storage scenario to the acceptance list.
+- [x] 5.2 `PictureCard`: Choose… (`NSOpenPanel`, PNG only), drop target, Use default, background import, and the error messages of design.md 6. Verify: CI builds. Add every `peek-settings` import and storage scenario to the acceptance list.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38131928343 (`e0117e2`): all seven jobs green.
+  - The whole card takes a drop, which the spec's "dropped on it" (the card) allows. A file is checked and converted off the main thread, then saved on the main thread. A refused or unsaved file leaves the card and the peek unchanged, and the message line says why.
+  - **Acceptance:** all nine import and storage rows are in `docs/acceptance.md`, plus mood-peek's "Damaged saved picture" and "VoiceOver in the MeowTab section".
 
 ## 6. Docs and close
 
-- [ ] 6.1 README:
+- [x] 6.1 README:
   - a "The peek" section (moods, defaults, how high it rises);
   - "Use your own pictures" (PNG only, the limits, where copies are kept, that originals can be moved);
   - "Remove MeowTab's data" (`rm -r ~/Library/Application\ Support/MeowTab` and `defaults delete io.github.tingtmu.meowtab.macos`);
   - known limits (still pictures only; the sidebar icon is a star until a paw glyph is added).
 
   Mark ROADMAP's MVP peek item done. Verify by reading the README against both specs.
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38131940252 (`f9c5b52`): all seven jobs green.
+  - The README was read against both specs; the extra preference domains (`.license`, `.usage`) are listed as optional removals.
+  - **Known issues** also say that General's Import and Reset reset MeowTab's settings, and its picture copies at the next start.
 - [ ] 6.2 On the latest `main` run, confirm that every automated check above is green and that the acceptance list holds every scenario not covered by unit tests. Then archive this change (`openspec archive mac-png-peek`).
