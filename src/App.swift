@@ -510,6 +510,7 @@ class App: NSApplication {
         Menubar.initialize()
         MainMenu.create()
         _ = TilesPanel()
+        PeekController.setUp() // MeowTab: loads the peek's pictures and settings, and creates its panel
         _ = PreviewPanel()
         Spaces.refresh()
         Screens.refresh()
