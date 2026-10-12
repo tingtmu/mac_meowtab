@@ -6,7 +6,8 @@ import ImageIO
 struct PeekPicture {
     enum LoadError: Error, Equatable { case tooBig, unreadable, notPNG, animated, tooLarge, empty }
 
-    private static let maxImportBytes = 10 * 1024 * 1024
+    /// 10 MB, as the import message says and Finder counts.
+    private static let maxImportBytes = 10_000_000
     private static let maxImportSide = 8192
     private static let maxImportPixels = 32_000_000
     /// The last chunk of every PNG: a length of 0, "IEND", and the CRC of "IEND".

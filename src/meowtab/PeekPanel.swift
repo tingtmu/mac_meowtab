@@ -38,8 +38,9 @@ final class PeekPanel: NSPanel {
 }
 
 /// Puts the peek panel on the pane's top edge. Main thread only, inside the app's own calls: `setUp` and one `hide`
-/// from `App`, `attachedFrame` from `SearchDiscoveryHint`, `reload` from the settings section, and the rest from hooks
-/// in `TilesPanel`. There is no timer and no async work, so a dismissed session leaves nothing behind. `panel` is nil
+/// from `App`, `attachedFrame` from `SearchDiscoveryHint`, `reload` and `whenSwitcherCloses` from the settings
+/// section, and the rest from hooks in `TilesPanel`. There is no timer and no async work: what `whenSwitcherCloses`
+/// queues runs in the `hide()` that ends the session, so a dismissed session leaves nothing behind. `panel` is nil
 /// until `setUp` has run, and while it is, every hook leaves the switcher as upstream's.
 class PeekController {
     /// MeowTab's settings, and its copies of the user's pictures.
@@ -69,6 +70,8 @@ class PeekController {
     private static var shown: Shown?
     /// Between `show()` and `hide()`, which is while the pane is on screen and not masked.
     private static var paneShown = false
+    /// What `whenSwitcherCloses` holds for the end of the session, in the order it came.
+    private static var queuedWork = [() -> Void]()
 
     /// Once, at launch, right after `TilesPanel` is created.
     static func setUp() {
@@ -100,6 +103,20 @@ class PeekController {
         settings = loaded.settings
         warnings = loaded.warnings + pictureWarnings
         generation &+= 1
+        // Thumbnail captures are sized for the tiles, which the reserve caps, and upstream sizes them again only
+        // on its own reset. `setUp` reloads before it makes the panel, so launch keeps upstream's sizing.
+        if panel != nil { TilesPanel.updateMaxPossibleThumbnailSize() }
+    }
+
+    /// Runs `work` at once while the switcher is closed, else in the `hide()` that closes it, in the order it came.
+    /// The settings section waits this way to reload an import that ends while the switcher is open, since a
+    /// session never decodes a picture or changes its room.
+    static func whenSwitcherCloses(_ work: @escaping () -> Void) {
+        guard SwitcherSession.isActive else {
+            work()
+            return
+        }
+        queuedWork.append(work)
     }
 
     /// From `TilesPanel.updateContents`, inside its transaction, once the pane has its size and place. AppKit moves
@@ -107,15 +124,18 @@ class PeekController {
     static func update(paneFrame: NSRect, screen: NSScreen) {
         guard let panel else { return }
         let count = Windows.list.lazy.filter { $0.shouldShowTheUser && !$0.isWindowlessApp }.count
-        let inputs = Inputs(count: count, paneFrame: paneFrame, visibleFrame: screen.visibleFrame,
-                            backingScale: screen.backingScaleFactor, generation: generation)
+        let inputs = Inputs(count: count, paneFrame: paneFrame, cornerRadius: Appearance.windowCornerRadius,
+                            visibleFrame: screen.visibleFrame, backingScale: screen.backingScaleFactor,
+                            generation: generation)
         guard inputs != applied else { return }
         let start = DispatchTime.now().uptimeNanoseconds
         applied = inputs
         let geometry = peekGeometry(inputs.visibleFrame)
+        let radius = inputs.cornerRadius
         if let mood = settings.mood(count), let picture = pictures[mood],
-           let peekFrame = geometry.peekFrame(n: count, paneFrame: paneFrame) {
-            place(panel, peekFrame, geometry.imageFrame(n: count), inputs.backingScale)
+           let peekFrame = geometry.peekFrame(n: count, paneFrame: paneFrame, cornerRadius: radius) {
+            let imageFrame = geometry.imageFrame(n: count, paneFrame: paneFrame, cornerRadius: radius)
+            place(panel, peekFrame, imageFrame, inputs.backingScale)
             let contents = Shown(mood: mood, generation: generation)
             if contents != shown {
                 panel.imageLayer.contents = picture.image
@@ -140,12 +160,16 @@ class PeekController {
 
     /// First thing in `TilesPanel.orderOut`, before upstream's fade, so the picture never outlasts the pane; and when a
     /// summon with another shortcut masks the pane for its rebuild, until `show()`. The next `update` applies
-    /// everything again.
+    /// everything again. Once the session has ended, as `App.beginHideUi` ends it before it orders the pane out, it
+    /// then runs what `whenSwitcherCloses` queued; the mask, mid-session, leaves the queue alone.
     static func hide() {
         paneShown = false
         applied = nil
-        guard let panel else { return }
-        detach(panel)
+        if let panel { detach(panel) }
+        guard !SwitcherSession.isActive else { return }
+        let work = queuedWork
+        queuedWork = []
+        for item in work { item() }
     }
 
     /// Upstream's centring, lowered when the pane needs the peek's room. The top edge, which the peek sits on, is
@@ -232,6 +256,7 @@ class PeekController {
     private struct Inputs: Equatable {
         let count: Int
         let paneFrame: NSRect
+        let cornerRadius: CGFloat
         let visibleFrame: NSRect
         let backingScale: CGFloat
         let generation: Int

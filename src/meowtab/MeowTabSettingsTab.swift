@@ -31,7 +31,8 @@ class MeowTabSettingsTab {
     }
 
     /// Saves an import's PNG as `mood`'s picture, or says why not. A failure changes nothing, so the card and the
-    /// peek keep their picture.
+    /// peek keep their picture. An import can end while the switcher is open, and a session never decodes a picture
+    /// or changes its room, so the reload waits for the switcher to close. The save doesn't: a session reads no file.
     fileprivate static func finishImport(_ result: Result<Data, Error>, for mood: Mood) {
         do {
             try PeekController.store.setPicture(result.get(), for: mood)
@@ -39,15 +40,15 @@ class MeowTabSettingsTab {
             showMessage(importFailureMessage(error), isError: true)
             return
         }
-        pictureChanged()
+        PeekController.whenSwitcherCloses { pictureChanged() }
     }
 
     /// After a picture is saved or cleared: the switcher decodes its pictures again, the cards show them, and the
-    /// message line is cleared.
+    /// message line shows what is still wrong, if anything.
     fileprivate static func pictureChanged() {
         PeekController.reload(picturesChanged: true)
         refresh()
-        showMessage("", isError: false)
+        showWarnings()
     }
 
     /// The three picture cards, in equal columns across the row.
@@ -117,11 +118,12 @@ class MeowTabSettingsTab {
     }
 
     /// A control moved to `number`. The clamping rules give the new settings, which are saved, handed to the
-    /// switcher, and shown.
+    /// switcher, and shown, and the message line shows what is still wrong, if anything.
     private static func change(_ field: Field, to number: Int) {
         PeekController.store.save(field.setting(number, in: PeekController.settings))
         PeekController.reload(picturesChanged: false)
         refresh()
+        showWarnings()
     }
 
     /// The shipped cats and the default settings again. The store removes only MeowTab's own keys and picture files.
@@ -176,7 +178,7 @@ class MeowTabSettingsTab {
         case .unreadable:
             return NSLocalizedString("That file can't be read as a picture.", comment: "MeowTab import message")
         case .empty:
-            return NSLocalizedString("That picture is fully transparent.", comment: "MeowTab import message")
+            return NSLocalizedString("That picture has no visible pixels.", comment: "MeowTab import message")
         }
     }
 
@@ -300,11 +302,12 @@ private final class PictureCard: NSStackView {
         fatalError("Class only supports programmatic initialization")
     }
 
-    /// Shows `title`, the picture in use for the mood, and Use default only while that picture is the user's.
+    /// Shows `title`, the picture in use for the mood, and Use default while the mood has a picture setting: the user's
+    /// picture, or a hand-edited value, which `load()` warns about until it is cleared.
     func refresh(title: String) {
         titleLabel.stringValue = title
         pictureView.image = PeekController.pictures[mood].map { NSImage(cgImage: $0.image, size: .zero) }
-        defaultButton.isHidden = PeekController.store.pictureURL(mood) == nil
+        defaultButton.isHidden = !PeekController.store.hasPictureSetting(mood)
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {

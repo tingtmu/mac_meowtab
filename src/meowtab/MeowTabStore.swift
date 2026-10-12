@@ -2,7 +2,8 @@ import Foundation
 
 /// MeowTab's settings, in its own `meowtab.*` keys, and its picture folder (design.md 7).
 final class MeowTabStore {
-    static let invalidSettingsWarning = NSLocalizedString("Some saved MeowTab settings were invalid and were reset.", comment: "")
+    static let invalidSettingsWarning = NSLocalizedString(
+        "Some saved MeowTab settings were invalid, so their defaults are used.", comment: "")
     private static let idCharacters: Set<Character> = Set("0123456789ABCDEF-")
 
     private enum Key {
@@ -60,6 +61,12 @@ final class MeowTabStore {
         return fileURL(name)
     }
 
+    /// Whether the mood's picture key holds anything at all: one of our names, or any other value, which `load()`
+    /// warns about and `clearPicture` removes without deleting a file.
+    func hasPictureSetting(_ mood: Mood) -> Bool {
+        return defaults.object(forKey: pictureKey(mood)) != nil
+    }
+
     /// Saves `png` as a new file, then points the mood's key at it, then deletes the file it replaces. If saving
     /// throws, the old key and file are left as they were.
     func setPicture(_ png: Data, for mood: Mood) throws {
@@ -113,7 +120,7 @@ final class MeowTabStore {
     }
 
     private func hasInvalidPicture(_ mood: Mood) -> Bool {
-        return defaults.object(forKey: pictureKey(mood)) != nil && pictureName(mood) == nil
+        return hasPictureSetting(mood) && pictureName(mood) == nil
     }
 
     /// The value stored for `key`, or `fallback` when the key is absent. A value of another type also gives

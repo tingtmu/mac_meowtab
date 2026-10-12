@@ -83,7 +83,7 @@ final class PeekPictureTests: XCTestCase {
 
     func testFileOverTenMegabytesIsTooBig() throws {
         let url = folder.appendingPathComponent("big.png")
-        try Data(count: 10 * 1024 * 1024 + 1).write(to: url)
+        try Data(count: 10_000_000 + 1).write(to: url)
         assertLoad(url, fails: .tooBig)
     }
 

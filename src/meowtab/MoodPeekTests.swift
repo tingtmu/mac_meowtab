@@ -215,7 +215,8 @@ final class MoodPeekTests: XCTestCase {
         XCTAssertEqual(geometry.scale, 1)
         XCTAssertEqual(geometry.reserve, 0)
         XCTAssertEqual(geometry.up(5), 0)
-        XCTAssertNil(geometry.peekFrame(n: 5, paneFrame: CGRect(x: 320, y: 111, width: 800, height: 600)))
+        XCTAssertNil(geometry.peekFrame(n: 5, paneFrame: CGRect(x: 320, y: 111, width: 800, height: 600),
+                                        cornerRadius: 23))
         XCTAssertEqual(geometry.maxContentHeight(windowPadding: 20), 741) // 805 - 2 * 12 - 2 * 20
     }
 
@@ -261,7 +262,7 @@ final class MoodPeekTests: XCTestCase {
         let visible = CGRect(x: 0, y: 70, width: 1440, height: 875)
         let geometry = makeGeometry(everyMood(fullArt), in: visible)
         let pane = paneAtTheCap(geometry)
-        let peek = try XCTUnwrap(geometry.peekFrame(n: 30, paneFrame: pane))
+        let peek = try XCTUnwrap(geometry.peekFrame(n: 30, paneFrame: pane, cornerRadius: 23))
         XCTAssertEqual(peek.height, geometry.reserve, accuracy: 1e-9)
         XCTAssertGreaterThanOrEqual(pane.minY, visible.minY + MoodPeek.margin - 0.5)
         XCTAssertLessThanOrEqual(peek.maxY, visible.maxY - MoodPeek.margin + 1e-9)
@@ -272,7 +273,7 @@ final class MoodPeekTests: XCTestCase {
         let visible = CGRect(x: 0, y: 70, width: 1440, height: 400)
         let geometry = makeGeometry(everyMood(fullArt), in: visible)
         let pane = paneAtTheCap(geometry)
-        let peek = try XCTUnwrap(geometry.peekFrame(n: 30, paneFrame: pane))
+        let peek = try XCTUnwrap(geometry.peekFrame(n: 30, paneFrame: pane, cornerRadius: 23))
         XCTAssertEqual(peek.height, geometry.reserve, accuracy: 1e-9)
         XCTAssertGreaterThanOrEqual(pane.minY, visible.minY + MoodPeek.margin - 0.5)
         XCTAssertLessThanOrEqual(peek.maxY, visible.maxY - MoodPeek.margin + 1e-9)
@@ -284,15 +285,15 @@ final class MoodPeekTests: XCTestCase {
         let geometry = makeGeometry([Mood.few: wide, Mood.some: fullArt, Mood.many: padded], in: laptop)
         let pane = CGRect(x: 320, y: 111, width: 800, height: 600)
         for (n, mood) in [(1, Mood.few), (3, Mood.some), (20, Mood.many)] {
-            let peek = try XCTUnwrap(geometry.peekFrame(n: n, paneFrame: pane), "\(n) windows")
+            let peek = try XCTUnwrap(geometry.peekFrame(n: n, paneFrame: pane, cornerRadius: 23), "\(n) windows")
             XCTAssertEqual(peek.minX, pane.minX + 24, "\(n) windows")
             XCTAssertEqual(peek.minY, pane.maxY, "\(n) windows")
             XCTAssertEqual(peek.width, geometry.pictureSize(mood).width, "\(n) windows")
             XCTAssertEqual(peek.height, geometry.up(n), "\(n) windows")
         }
-        let few = try XCTUnwrap(geometry.peekFrame(n: 1, paneFrame: pane))
+        let few = try XCTUnwrap(geometry.peekFrame(n: 1, paneFrame: pane, cornerRadius: 23))
         XCTAssertEqual(few.height, 53.125, accuracy: 1e-9)
-        XCTAssertNil(geometry.peekFrame(n: 0, paneFrame: pane))
+        XCTAssertNil(geometry.peekFrame(n: 0, paneFrame: pane, cornerRadius: 23))
     }
 
     func testAPeekShorterThanOnePointIsHidden() {
@@ -300,21 +301,65 @@ final class MoodPeekTests: XCTestCase {
         let geometry = makeGeometry(everyMood(sliver), in: laptop)
         XCTAssertGreaterThan(geometry.up(1), 0)
         XCTAssertLessThan(geometry.up(1), 1)
-        XCTAssertNil(geometry.peekFrame(n: 1, paneFrame: CGRect(x: 320, y: 111, width: 800, height: 600)))
+        XCTAssertNil(geometry.peekFrame(n: 1, paneFrame: CGRect(x: 320, y: 111, width: 800, height: 600),
+                                        cornerRadius: 23))
     }
 
     /// The peek panel's bottom edge is the pane's top edge. The image's top `up(n)` points lie above it, and the
     /// rest, below that edge, is clipped.
     func testTheImageShowsItsTopRowsAboveThePanelsBottomEdge() {
         let geometry = makeGeometry([Mood.few: wide, Mood.some: fullArt, Mood.many: padded], in: laptop)
-        let few = geometry.imageFrame(n: 1)
+        let pane = CGRect(x: 320, y: 111, width: 800, height: 600)
+        let few = geometry.imageFrame(n: 1, paneFrame: pane, cornerRadius: 23)
         XCTAssertEqual(few.minX, 0)
         XCTAssertEqual(few.size, CGSize(width: 160, height: 80))
         XCTAssertEqual(few.maxY, geometry.up(1), accuracy: 1e-9)
         XCTAssertEqual(few.minY, -26.875, accuracy: 1e-9)
-        let many = geometry.imageFrame(n: 20)
+        let many = geometry.imageFrame(n: 20, paneFrame: pane, cornerRadius: 23)
         XCTAssertEqual(many.maxY, geometry.up(20), accuracy: 1e-9)
         XCTAssertEqual(many.minY, -64.25, accuracy: 1e-9)
-        XCTAssertEqual(geometry.imageFrame(n: 0), CGRect.zero)
+        XCTAssertEqual(geometry.imageFrame(n: 0, paneFrame: pane, cornerRadius: 23), CGRect.zero)
+    }
+
+    /// macOS 26 rounds the pane's corners by 43 points with thumbnails, so the peek moves in to 43 points, clear of
+    /// the curve. macOS 15's 23 is less than the inset, which keeps the peek 24 points in. Either way, a pane this
+    /// wide leaves the peek its full size.
+    func testARounderCornerMovesThePeekIn() throws {
+        let geometry = makeGeometry([Mood.few: wide, Mood.some: fullArt, Mood.many: padded], in: laptop)
+        let pane = CGRect(x: 320, y: 111, width: 800, height: 600)
+        let macOS15 = try XCTUnwrap(geometry.peekFrame(n: 1, paneFrame: pane, cornerRadius: 23))
+        let macOS26 = try XCTUnwrap(geometry.peekFrame(n: 1, paneFrame: pane, cornerRadius: 43))
+        XCTAssertEqual(macOS15.minX, pane.minX + 24)
+        XCTAssertEqual(macOS26.minX, pane.minX + 43)
+        XCTAssertEqual(macOS26.size, macOS15.size)
+        XCTAssertEqual(geometry.imageFrame(n: 1, paneFrame: pane, cornerRadius: 43),
+                       geometry.imageFrame(n: 1, paneFrame: pane, cornerRadius: 23))
+    }
+
+    /// App icons with one window give a narrow pane. 132 points leave 84 between the 24-point margins, so the peek
+    /// and the 160 × 80 image are scaled by 84 / 160, and the peek ends a margin short of the pane's right edge.
+    func testANarrowPaneScalesThePeekDownToFitBetweenTheMargins() throws {
+        let geometry = makeGeometry([Mood.few: wide, Mood.some: fullArt, Mood.many: padded], in: laptop)
+        let pane = CGRect(x: 654, y: 300, width: 132, height: 200)
+        let fit: CGFloat = 84 / 160
+        let peek = try XCTUnwrap(geometry.peekFrame(n: 1, paneFrame: pane, cornerRadius: 23))
+        XCTAssertEqual(peek.minX, pane.minX + 24)
+        XCTAssertEqual(peek.width, 84, accuracy: 1e-9)
+        XCTAssertEqual(peek.maxX, pane.maxX - 24, accuracy: 1e-9)
+        XCTAssertEqual(peek.height, geometry.up(1) * fit, accuracy: 1e-9)
+        let image = geometry.imageFrame(n: 1, paneFrame: pane, cornerRadius: 23)
+        XCTAssertEqual(image.minX, 0)
+        XCTAssertEqual(image.width, 160 * fit, accuracy: 1e-9)
+        XCTAssertEqual(image.height, 80 * fit, accuracy: 1e-9)
+        XCTAssertEqual(image.maxY, peek.height, accuracy: 1e-9)
+    }
+
+    /// A pane no wider than its two margins leaves the picture no room.
+    func testAPaneNoWiderThanItsMarginsHasNoPeek() {
+        let geometry = makeGeometry(everyMood(fullArt), in: laptop)
+        for width in [CGFloat(48), 30] {
+            let pane = CGRect(x: 654, y: 300, width: width, height: 200)
+            XCTAssertNil(geometry.peekFrame(n: 1, paneFrame: pane, cornerRadius: 23), "\(width) points wide")
+        }
     }
 }

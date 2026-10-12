@@ -191,6 +191,29 @@ final class MeowTabStoreTests: XCTestCase {
         XCTAssertEqual(store.load().settings, custom)
     }
 
+    /// A hand-edited picture value that isn't one of our names, here a path or a number, warns at every load and
+    /// shows Use default. Use default removes it and deletes no file, not even the one the path names, and the
+    /// warning goes.
+    func testUseDefaultClearsAPictureValueThatIsNotOurs() throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let named = folder.appendingPathComponent("x.png")
+        try write("keep me", to: named)
+        let values: [Any] = [named.path, 7]
+        for value in values {
+            defaults.set(value, forKey: "meowtab.picture.few")
+            XCTAssertTrue(store.hasPictureSetting(Mood.few), "\(value)")
+            XCTAssertNil(store.pictureURL(Mood.few), "\(value)")
+            XCTAssertEqual(store.load().warnings, [MeowTabStore.invalidSettingsWarning], "\(value)")
+
+            store.clearPicture(Mood.few)
+
+            XCTAssertNil(defaults.object(forKey: "meowtab.picture.few"), "\(value)")
+            XCTAssertFalse(store.hasPictureSetting(Mood.few), "\(value)")
+            XCTAssertTrue(exists(named), "\(value)")
+            XCTAssertEqual(store.load().warnings, [], "\(value)")
+        }
+    }
+
     /// The `peek-settings` scenario "Restore defaults": MeowTab's keys and picture files go, nothing else does.
     func testRestoreDefaultsRemovesOnlyMeowTabsData() throws {
         store.save(MoodSettings(someFrom: 4, manyFrom: 9, minShare: 0.5, maxShare: 0.7))

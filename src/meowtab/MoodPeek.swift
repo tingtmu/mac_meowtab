@@ -9,7 +9,8 @@ enum Mood: String, CaseIterable {
 enum MoodPeek {
     /// The picture's longest side.
     static let box: CGFloat = 160
-    /// From the pane's left edge to the picture's.
+    /// The least distance from the pane's left edge to the picture's, and from the picture's right edge to the
+    /// pane's. A rounder corner moves the picture further in, onto the straight part of the pane's top edge.
     static let inset: CGFloat = 24
     /// The peek's top stays at least this far below the top of the usable area.
     static let margin: CGFloat = 12
@@ -168,25 +169,44 @@ struct PeekGeometry {
         return CGPoint(x: x, y: min(centredY, highestY))
     }
 
-    /// The peek panel's frame: its bottom on the pane's top edge, `inset` in from the pane's left edge. nil when
-    /// less than a point of it would show.
-    func peekFrame(n: Int, paneFrame: CGRect) -> CGRect? {
-        let height = up(n)
+    /// The peek panel's frame: its bottom on the pane's top edge, and its left edge `side` in from the pane's, where
+    /// that edge is straight. A pane too narrow for the picture and a `side` at each end scales the peek down to
+    /// fit. nil when less than a point of it would show.
+    func peekFrame(n: Int, paneFrame: CGRect, cornerRadius: CGFloat) -> CGRect? {
+        let fit = self.fit(count: n, paneFrame: paneFrame, cornerRadius: cornerRadius)
+        let height = up(n) * fit
         guard height >= 1 else { return nil }
-        return CGRect(x: paneFrame.minX + MoodPeek.inset, y: paneFrame.maxY,
-                      width: pictureSize(count: n).width, height: height)
+        let x = paneFrame.minX + PeekGeometry.side(cornerRadius)
+        return CGRect(x: x, y: paneFrame.maxY, width: pictureSize(count: n).width * fit, height: height)
     }
 
-    /// The picture's frame inside the peek panel. Its top `up(n)` points show, and the rest, below the panel's
-    /// bottom edge, is clipped.
-    func imageFrame(n: Int) -> CGRect {
+    /// The picture's frame inside the peek panel, scaled as the panel is. Its top `up(n) * fit` points show, as high
+    /// as the panel, and the rest, below the panel's bottom edge, is clipped.
+    func imageFrame(n: Int, paneFrame: CGRect, cornerRadius: CGFloat) -> CGRect {
+        let fit = self.fit(count: n, paneFrame: paneFrame, cornerRadius: cornerRadius)
         let size = pictureSize(count: n)
-        return CGRect(x: 0, y: up(n) - size.height, width: size.width, height: size.height)
+        let height = size.height * fit
+        return CGRect(x: 0, y: up(n) * fit - height, width: size.width * fit, height: height)
     }
 
     private func pictureSize(count n: Int) -> CGSize {
         guard let mood = settings.mood(n) else { return .zero }
         return pictureSize(mood)
+    }
+
+    /// The least distance from each side of the pane to the picture: `MoodPeek.inset`, or the corner's radius when
+    /// that is larger, so that the picture sits on the straight part of the pane's top edge.
+    private static func side(_ cornerRadius: CGFloat) -> CGFloat {
+        max(MoodPeek.inset, cornerRadius)
+    }
+
+    /// What the peek is scaled by, at most 1, so that the picture fits the pane with `side` to spare at each end.
+    /// 1 when the count has no picture, as there is nothing to fit.
+    private func fit(count n: Int, paneFrame: CGRect, cornerRadius: CGFloat) -> CGFloat {
+        let pictureWidth = pictureSize(count: n).width
+        guard pictureWidth > 0 else { return 1 }
+        let room = max(paneFrame.width - 2 * PeekGeometry.side(cornerRadius), 0)
+        return min(1, room / pictureWidth)
     }
 
     /// Points per picture pixel when the picture fills the box at box scale `scale`.
