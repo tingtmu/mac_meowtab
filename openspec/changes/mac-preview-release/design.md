@@ -32,12 +32,13 @@ See [proposal.md](proposal.md). After `mac-png-peek`, CI builds an ad-hoc-signed
 The owner does this once, on Windows in Git Bash. An agent must not see or handle the password.
 
 ```text
-bash scripts/codesign/generate_selfsigned_certificate.sh codesign "<password>" "MeowTab for Mac"
+bash scripts/codesign/generate_selfsigned_certificate.sh codesign "<password>" "MeowTab for Mac" 3650
 base64 -w0 codesign.p12 | gh secret set MEOWTAB_CERT_P12
 gh secret set MEOWTAB_CERT_PASSWORD        # type the password at the prompt
 ```
 
 - The script's new third argument sets `CN`. It defaults to `Local Self-Signed`, so upstream's callers are unaffected.
+- The new fourth argument sets the validity in days. Its default is openssl's own, 30 days, which suits upstream's throwaway local certificates. The release certificate must outlast many releases, so it gets 10 years.
 - Keep `codesign.p12` and the password in a password manager, then delete the local `codesign.*` files.
 - **Losing the certificate** means the next release has a new requirement, so users must re-grant permissions once. The install guide says so.
 

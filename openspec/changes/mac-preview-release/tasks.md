@@ -4,7 +4,7 @@ Starts after `mac-png-peek` is archived. Groups 1–3 are checked by CI and by r
 
 ## 1. Signing identity
 
-- [ ] 1.1 Add the optional third argument (`CN`, default `Local Self-Signed`) to `scripts/codesign/generate_selfsigned_certificate.sh`. Verify: `bash -n` passes, and with two arguments the generated `.conf` is byte-identical to upstream's.
+- [x] 1.1 Add the optional third argument (`CN`, default `Local Self-Signed`) and fourth argument (validity in days, default 30, openssl's own default) to `scripts/codesign/generate_selfsigned_certificate.sh`. Verify: `bash -n` passes; with two arguments the generated `.conf` is byte-identical to upstream's and the certificate lasts 30 days; with `"MeowTab for Mac" 3650` its CN is `MeowTab for Mac` and it lasts 10 years.
 - [ ] 1.2 **Owner only; no agent handles the password.** Generate the certificate and set the two secrets (design.md 1). Verify: `gh secret list` shows `MEOWTAB_CERT_P12` and `MEOWTAB_CERT_PASSWORD`, and no `codesign.*` file is tracked (`git status`).
 - [ ] 1.3 Add `scripts/meowtab/setup_release_signing.sh` (design.md 1). Verify: through task 2.2's dry run.
 

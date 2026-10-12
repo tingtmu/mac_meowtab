@@ -5,6 +5,8 @@ set -exu
 certificateFile="$1"
 certificatePassword="$2"
 certificateName="${3:-Local Self-Signed}"
+# validity in days; 30 is openssl's own default
+certificateDays="${4:-30}"
 
 # certificate request (see https://apple.stackexchange.com/q/359997)
 cat >$certificateFile.conf <<EOL
@@ -23,7 +25,7 @@ EOL
 # generate key
 openssl genrsa -out $certificateFile.key 2048
 # generate self-signed certificate
-openssl req -x509 -new -config $certificateFile.conf -nodes -key $certificateFile.key -extensions extensions -sha256 -out $certificateFile.crt
+openssl req -x509 -new -config $certificateFile.conf -nodes -key $certificateFile.key -extensions extensions -sha256 -days $certificateDays -out $certificateFile.crt
 
 openssl_version=$(openssl version)
 # openssl v3.x requires to pass -legacy

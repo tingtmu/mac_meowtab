@@ -53,7 +53,7 @@ None. Moving the CI build steps into `scripts/meowtab/build.sh` and making `ci.y
 - **CI and release:**
   - new `.github/workflows/release.yml`, `scripts/meowtab/build.sh` and `scripts/meowtab/setup_release_signing.sh`;
   - `.github/workflows/ci.yml` gains `on: workflow_call` and calls `build.sh`;
-  - `scripts/codesign/generate_selfsigned_certificate.sh` gains an optional third argument, the certificate's name (default unchanged).
+  - `scripts/codesign/generate_selfsigned_certificate.sh` gains optional third and fourth arguments, the certificate's name and its validity in days (defaults unchanged).
 - **Docs:**
   - new `docs/install.md`, `docs/release-notes-template.md`, `docs/designated-requirement.txt` and `docs/acceptance/<tag>.md`;
   - `docs/acceptance.md` finished as a run sheet;
