@@ -5,7 +5,7 @@ Starts after `mac-png-peek` is archived. Groups 1–3 are checked by CI and by r
 ## 1. Signing identity
 
 - [x] 1.1 Add the optional third argument (`CN`, default `Local Self-Signed`) and fourth argument (validity in days, default 30, openssl's own default) to `scripts/codesign/generate_selfsigned_certificate.sh`. Verify: `bash -n` passes; with two arguments the generated `.conf` is byte-identical to upstream's and the certificate lasts 30 days; with `"MeowTab for Mac" 3650` its CN is `MeowTab for Mac` and it lasts 10 years.
-- [ ] 1.2 **Owner only; no agent handles the password.** Generate the certificate and set the two secrets (design.md 1). Verify: `gh secret list` shows `MEOWTAB_CERT_P12` and `MEOWTAB_CERT_PASSWORD`, and no `codesign.*` file is tracked (`git status`).
+- [x] 1.2 **Owner only; no agent handles the password.** Generate the certificate and set the two secrets (design.md 1). Verify: `gh secret list` shows `MEOWTAB_CERT_P12` and `MEOWTAB_CERT_PASSWORD`, and no `codesign.*` file is tracked (`git status`).
 - [ ] 1.3 Add `scripts/meowtab/setup_release_signing.sh` (design.md 1). Verify: through task 2.2's dry run.
 
 ## 2. Build script and release workflow
@@ -20,8 +20,8 @@ Starts after `mac-png-peek` is archived. Groups 1–3 are checked by CI and by r
 
 ## 3. Guides
 
-- [ ] 3.1 Write `docs/install.md` (design.md 3), and add Install and Download sections to the README that link it. Verify by reading it against the `mac-release` "Install guide" requirement: each listed topic appears, there is no Gatekeeper or SIP disabling, and the commands are copied exactly from design.md.
-- [ ] 3.2 Finish `docs/acceptance.md` as the run sheet of design.md 4. Verify with a cross-check table at the end of the sheet: each scenario of every spec in `openspec/specs/` is listed as either "unit test: <test name>", "CI: <job>" or "row <n>", with none missing.
+- [x] 3.1 Write `docs/install.md` (design.md 3), and add Install and Download sections to the README that link it. Verify by reading it against the `mac-release` "Install guide" requirement: each listed topic appears, there is no Gatekeeper or SIP disabling, and the commands are copied exactly from design.md.
+- [x] 3.2 Finish `docs/acceptance.md` as the run sheet of design.md 4. Verify with a cross-check table at the end of the sheet: each scenario of every spec in `openspec/specs/` is listed as either "unit test: <test name>", "CI: <job>" or "row <n>", with none missing.
 
 ## 4. Candidates and acceptance
 
