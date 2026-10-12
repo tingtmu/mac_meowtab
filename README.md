@@ -6,7 +6,7 @@ AltTab and MeowTab are free software under the GNU General Public License v3.0 (
 
 ## Status
 
-In development. There are no downloads or releases yet. CI builds are ad-hoc-signed test builds: macOS forgets the Accessibility and Screen Recording permissions you grant on every new build, so they are not for daily use. The plan is in [`openspec/`](openspec/) and [`ROADMAP.md`](ROADMAP.md).
+In development. Test candidates for a real-Mac acceptance run are published as they're ready (see [Download](#download)), and the 0.1.0 preview follows once one passes. CI builds are ad-hoc-signed test builds: macOS forgets the Accessibility and Screen Recording permissions you grant on every new build, so they are not for daily use. The plan is in [`openspec/`](openspec/) and [`ROADMAP.md`](ROADMAP.md).
 
 ## What MeowTab adds
 
@@ -17,6 +17,25 @@ What this fork changes from AltTab:
 - Its own name and bundle ID, so it runs beside AltTab without sharing settings or permissions.
 - No update checks, crash reporting, licence server or feedback form, so it makes no network traffic of its own.
 - AltTab's Pro features are unlocked, with no trial.
+
+## Download
+
+Releases are on the [releases page](https://github.com/tingtmu/mac_meowtab/releases).
+
+Each release has:
+
+- `MeowTab-<version>-mac.zip`: the app, with `INSTALL.md`, `LICENCE.md` and `NOTICE.md`. `<version>` is the release's tag, such as `v0.1.0-rc.1`.
+- `SHA256SUMS.txt`: the zip's SHA-256 hash, to check your download.
+
+Test candidates (`vX.Y.Z-rc.N`) are pre-releases labelled "Test candidate — not yet checked on a real Mac". The preview (`v0.1.0`) is published only after a candidate passes an acceptance run on a real Mac, and it ships the same zip.
+
+Releases are self-signed, not notarized, so macOS asks once the first time you open the app. The signature stays the same from release to release, so the permissions you grant should survive updates.
+
+## Install
+
+Unzip the download and move `MeowTab.app` into Applications. Open it: macOS says it was not opened, so click "Done", then click "Open Anyway" in System Settings > Privacy & Security. On macOS 14 and earlier, Control-click the app and choose "Open" instead. Then grant Accessibility, which MeowTab needs, and Screen Recording, which is optional: without it the switcher shows app icons instead of window previews.
+
+[`docs/install.md`](docs/install.md) has the steps in full, and covers running beside AltTab, launch at login, updating and removing MeowTab. It ships in each zip as `INSTALL.md`.
 
 ## The peek
 
@@ -113,3 +132,5 @@ CI (`.github/workflows/ci.yml`) builds a universal (arm64 and x86_64), ad-hoc-si
 - `screenshot` runs only when started by hand, on the two macOS 15 runners (`macos-15` and `macos-15-intel`). It grants MeowTab its permissions, opens three TextEdit windows and the switcher, and uploads screenshots of the peek. It never fails a run.
 
 To get the app, open the Actions tab on GitHub, pick the latest run on `main`, and download the `MeowTab-<commit>.zip` artifact.
+
+The release workflow (`.github/workflows/release.yml`) runs on a version tag. It checks the tag against `MEOWTAB_VERSION` and runs the CI workflow. Then it builds the app signed with the project's self-signed certificate, from the repository secrets `MEOWTAB_CERT_P12` and `MEOWTAB_CERT_PASSWORD`, and checks its designated requirement against `docs/designated-requirement.txt`. It packages the zip and `SHA256SUMS.txt` and opens a draft release. Started by hand, it runs as a dry run that uploads them as artifacts instead.
