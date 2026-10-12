@@ -47,8 +47,8 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38130033273 (`584c170`): all seven jobs green. `TileGridLayoutTests` (19) and `TilePoolTests` (7) pass on all three runners (1538 tests, 0 failures, on each).
   - The diff against `6d8940b` adds 6 lines, all marked `// MeowTab:`. It removes only the 3 upstream lines they replace: two `repositionPanel` calls, and the old `maxThumbnailsHeight` expression.
   - **Two more one-line hooks** (design.md 5, proposal.md):
-    - `App.showUiOrCycleSelection` hides the peek while a cross-shortcut summon masks the pane.
-    - `SearchDiscoveryHint` treats the attached peek as an obstruction, so the hint goes below the pane rather than over the cat.
+    - `src/App.swift` (`showUiOrCycleSelection`) hides the peek while a cross-shortcut summon masks the pane.
+    - `src/switcher/search-discovery/SearchDiscoveryHint.swift` treats the attached peek as an obstruction, so the hint goes below the pane rather than over the cat.
   - **Acceptance:** the 10 listed rows, plus "Summon with another shortcut" and "Search hint and the peek", are in `docs/acceptance.md`.
 - [x] 4.3 (optional, time-boxed to 3 hours) The CI screenshot spike of design.md 11, as a separate job that runs only on manual dispatch (`if: github.event_name == 'workflow_dispatch'`). Verify: either a screenshot artifact shows the peek above a 3-window switcher, or this task records which step failed and the job is removed.
   - Job `screenshot`, commit `a003d81`. On pushes it is skipped (https://github.com/tingtmu/mac_meowtab/actions/runs/38132029610).

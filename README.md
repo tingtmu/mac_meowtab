@@ -28,11 +28,11 @@ The peek is a cat picture that sits on the top-left edge of the switcher's pane,
 
 These are the defaults. In Settings > MeowTab, "Some from" and "Many from" move the thresholds, and "With 1 window" and "With many windows" set how high the peek rises. Changes apply at once.
 
-**What counts as a window.** The real windows the switcher lists, including ones scrolled out of view. App-only placeholder tiles don't count, and a group of tabs counts once. Typing a search doesn't change the count. With no real window, there is no picture.
+**What counts as a window.** The real windows the switcher lists, including ones scrolled out of view. App-only placeholder tiles don't count, and a group of tabs counts once while the switcher groups tabs, as it does by default. Typing a search doesn't change the count. With no real window, there is no picture.
 
 **How high it rises.** By default, 80 % of the picture's art shows above the pane with 1 window. That share rises evenly to 95 % at "Many from" plus 4 windows (12 by default), and stays there. The art is the part of the picture with visible pixels, so transparent padding around the cat doesn't change how much of it shows.
 
-**Where it sits.** The picture keeps its proportions inside a 160-point box and sits 24 points in from the pane's left edge. Only the part above the pane's top edge shows. The pane leaves room above itself, so the picture's top stays at least 12 points below the top of the display's usable area. That area excludes the menu bar and the Dock. When there are more windows than fit, the tiles scroll instead of the pane growing into that room. The room doesn't change while the switcher is open. The picture shrinks only on very short displays, where the room would take more than 30 % of the usable height.
+**Where it sits.** The picture keeps its proportions inside a 160-point box and sits 24 points in from the pane's left edge, or further in where the pane's corners are rounder: on macOS 26 that is 43 points with thumbnails, and 50, 55 or 75 points with small, medium or large app icons. On a pane too narrow for that, such as app icons with one window, the picture shrinks to fit between the same margins. Only the part above the pane's top edge shows. The pane leaves room above itself, so the picture's top stays at least 12 points below the top of the display's usable area. That area excludes the menu bar and the Dock. When there are more windows than fit, the tiles scroll instead of the pane growing into that room. The room doesn't change while the switcher is open. The picture shrinks only on very short displays, where the room would take more than 30 % of the usable height.
 
 The picture takes no focus and no clicks: a click on it counts as a click outside the pane. VoiceOver skips it. It is a still picture, shown with the pane: it appears when the pane does, and goes as soon as the pane starts to hide.
 
@@ -45,7 +45,7 @@ A picture is accepted only if it is:
 - a PNG, checked by its content and not by its name, so a JPEG renamed to `.png` is refused;
 - a still picture, so animated PNGs and GIFs are refused;
 - at most 10 MB, 8192 px a side and 32 megapixels;
-- not fully transparent: it needs some visible pixel.
+- not fully or nearly fully transparent: it needs some visible pixels.
 
 If a picture breaks a limit or can't be saved, the card keeps its old picture, and the message line under "Restore defaults" says why. A picture whose longer side is over 1024 px is scaled down to 1024 px, keeping its proportions and transparency.
 
@@ -104,11 +104,12 @@ If "Start at login" is on, turn it off in Settings > General before you remove M
 
 ## Building
 
-CI (`.github/workflows/ci.yml`) builds a universal (arm64 and x86_64), ad-hoc-signed Release app with Xcode 26.0.1 and uses no secrets. It has four jobs:
+CI (`.github/workflows/ci.yml`) builds a universal (arm64 and x86_64), ad-hoc-signed Release app with Xcode 26.0.1 and uses no secrets. It has five jobs:
 
 - `build` checks that `LICENCE.md` is unchanged from AltTab v11.9.0, builds the app, checks its architectures, signature and identity, checks the offline cuts and the bundled cat pictures, and uploads a zip.
 - `build-debug` compiles the Debug configuration too, so debug-only code can't break unnoticed.
 - `test` runs the unit tests on macOS 15 (Apple silicon), macOS 15 (Intel) and macOS 26 (Apple silicon).
 - `launch` installs the built app on the two macOS 15 runners, starts it, and checks that it stays running with no internet sockets and no crash report.
+- `screenshot` runs only when started by hand, on the two macOS 15 runners (`macos-15` and `macos-15-intel`). It grants MeowTab its permissions, opens three TextEdit windows and the switcher, and uploads screenshots of the peek. It never fails a run.
 
 To get the app, open the Actions tab on GitHub, pick the latest run on `main`, and download the `MeowTab-<commit>.zip` artifact.

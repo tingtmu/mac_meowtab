@@ -23,7 +23,7 @@ Windows MeowTab reference:
 - **Mood rules:** `SOME_FROM` 3, `MANY_FROM` 8, `PEEK_MIN` 0.80, `PEEK_MAX` 0.95, `PeekShare(n)` (`meowtab.ahk:19-23, 313-314`).
 - **Rows above the pane:** `top + (bottom - top) * share` over the art span (`meowtab.ahk:297`).
 - **Picture placement:** 24 px in from the pane's left edge (`PEEK_X`) and 250 px wide at 150 % scaling.
-- **Shipped pictures:** 512×512, where "art" means alpha > 24 (`openspec/specs/mood-pictures/spec.md` there). Each cat's art spans 472–484 px on its longer side. Measured here: few's art is rows 51–460 (410 tall, 484 wide), some's rows 112–399 (288 tall, 484 wide), and many's rows 14–496 (483 tall, 472 wide).
+- **Shipped pictures:** 512×512, where "art" means alpha > 24 (`openspec/specs/mood-pictures/spec.md` there). Each cat's art spans 483–484 px on its longer side. Measured here: few's art is rows 51–460 (410 tall, 484 wide), some's rows 112–399 (288 tall, 484 wide), and many's rows 14–496 (483 tall, 472 wide).
 
 ## Goals / Non-Goals
 
@@ -55,7 +55,7 @@ Constants live in `MoodPeek.swift`:
 | Constant | Value | Reason |
 | --- | --- | --- |
 | `box` | 160 pt | The picture's longest side; about Windows' 250 px at 150 % |
-| `inset` | 24 pt | From the pane's left edge to the picture's; Windows' `PEEK_X` |
+| `inset` | 24 pt | The least from the pane's left edge to the picture's, and from the picture's right edge to the pane's; Windows' `PEEK_X`. A larger corner radius takes over (decision 4) |
 | `margin` | 12 pt | Between the peek's top and the usable area's top |
 | `maxReserve` | 0.30 | The peek never takes more than 30 % of the usable height |
 | `artAlpha` | 24 | Art means alpha > 24, the rule the shipped set is framed with |
@@ -97,8 +97,11 @@ s        = min(1, maxReserve * visibleFrame.height / reserve(at s = 1))
 - **Placement.** This replaces `repositionPanel` for the pane only; other windows still use upstream's.
   - `x` is centred as upstream.
   - `y = min(V.minY + max(V.height - H, 0) / 2, V.maxY - margin - R - H)`, where `H` is the pane's height. Short panes stay centred; tall ones move down just enough.
-- **Peek frame.** `(pane.minX + inset, pane.maxY, size.width, up(n))`, hidden when `up(n) < 1`.
-- **Image layer.** Inside the peek panel's layer-backed content view (`masksToBounds = true`), the image layer's frame is `(0, up(n) - size.height, size.width, size.height)`. So the picture's top rows show, and the rest is clipped at the pane's edge, never drawn over the pane's material.
+- **Peek frame.** `(pane.minX + side, pane.maxY, size.width * fit, up(n) * fit)`, hidden when `up(n) * fit < 1`, which includes a pane with no room between the two margins (`fit` is 0).
+  - `side = max(inset, cornerRadius)`, where `cornerRadius` is upstream's `Appearance.windowCornerRadius`: 23 pt on macOS 15 and earlier in every style; on macOS 26, 43 pt with thumbnails, 50, 55 or 75 pt with small, medium or large app icons, and 23 pt with titles.
+  - On a pane narrower than the picture plus `side` at each end (app icons with one window, say), `fit = min(1, (pane.width - 2 * side) / size.width)` scales the picture down, so it ends `side` from the right edge. Otherwise `fit` is 1.
+  - So the cut edge lies on the straight part of the pane's top edge, with no gap under the cat where the corner curves away, and a narrow pane gets a smaller cat rather than one hanging off its edge.
+- **Image layer.** Inside the peek panel's layer-backed content view (`masksToBounds = true`), the image layer's frame is `(0, up(n) - size.height, size.width, size.height)`, with `size` and `up(n)` both scaled by `fit`. So the picture's top rows show, and the rest is clipped at the pane's edge, never drawn over the pane's material.
 - **Stability.** `R` depends on the pictures, the settings and the screen, not on `n`. So a window closing while the switcher is open changes only the peek's height. The pane is still placed by upstream's rule in the room left.
 
 ### 5. Panel and hooks
@@ -134,11 +137,12 @@ Upstream edits are one line each, marked `// MeowTab:`.
 
 Behaviour of the controller:
 
-- **`update`** stores `n`, the mood and the frames. It skips all work when `n`, the pane frame, the screen and the settings generation are unchanged, which is the case for selection steps. Otherwise it:
-  - swaps the image layer's contents only when the mood changed;
+- **`update`** stores `n`, the mood and the frames. It skips all work when `n`, the pane frame, the corner radius, the screen and the settings generation are unchanged, which is the case for selection steps. Otherwise it:
+  - swaps the image layer's contents when the mood or the pictures changed, not only the mood: each `reload` bumps a generation, and a new generation swaps them;
   - sets the panel frame;
   - orders the panel out when the mood is nil.
 - **Synchronous by design.** Everything runs on the main thread, inside upstream's call stack. No timer or async work exists, so a dismissed session can't leave work behind.
+- **A reload waits for an open switcher.** An import runs in the background, so it can finish after the switcher has opened. Its file is saved at once, but what follows (`pictureChanged`: the peek's reload, the cards and the message line) goes through `PeekController.whenSwitcherCloses`, which runs it at once when no switcher is open, and otherwise holds it for `hide()` at the session's end. The open session keeps its pictures and its reserved room, and the next session shows the new picture. `hide()` can tell a session's end because `App.beginHideUi` clears `SwitcherSession.current` before `TilesPanel.orderOut` calls it, so no session is open by then; the call that masks the pane for a cross-shortcut rebuild comes with the session open, and runs nothing.
 - **Permission loss** restarts the process (`App.restart()`), which takes the panel with it.
 - **Timing log.** `update` measures itself with `os.Logger(subsystem: "io.github.tingtmu.meowtab.macos", category: "peek")` at `.debug`, as `update <ms> ms n=<n>`. The acceptance run reads it with `log stream --level debug --predicate 'category == "peek"'`.
 
@@ -146,12 +150,12 @@ Behaviour of the controller:
 
 `PeekPicture.load(url:) throws` performs these steps, and stops at the first failure:
 
-1. File size ≤ 10 MiB (`FileManager` attributes), else `.tooBig`.
+1. File size ≤ 10 MB (10,000,000 bytes, as Finder counts; `FileManager` attributes), else `.tooBig`.
 2. `CGImageSourceCreateWithURL(url, [kCGImageSourceShouldCache: false])`, else `.unreadable`.
 3. `CGImageSourceGetType` is `public.png`, else `.notPNG`. GIF, JPEG or a renamed file fail here.
 4. `CGImageSourceGetCount` is 1: more gives `.animated`, and 0 (a truncated file can report no images) gives `.unreadable`. ImageIO counts an APNG's frames. If the test in decision 9 shows it doesn't, scan for an `acTL` chunk before the first `IDAT` instead.
 5. `CGImageSourceCopyPropertiesAtIndex`: width and height ≤ 8192 and width × height ≤ 32,000,000, else `.tooLarge`. No pixel has been decoded yet.
-6. Decode, once the file ends with PNG's `IEND` chunk: a cut-short PNG can still decode into a partly blank picture, and ImageIO's frame status isn't reliable for a still image's only frame, so a missing `IEND` gives `.unreadable` first.
+6. Decode, once the file contains PNG's `IEND` chunk (anywhere in it, so trailing bytes pass): a cut-short PNG can still decode into a partly blank picture, and ImageIO's frame status isn't reliable for a still image's only frame, so a missing `IEND` gives `.unreadable` first.
    - longest side > 1024: `CGImageSourceCreateThumbnailAtIndex` with `FromImageAlways`, `ThumbnailMaxPixelSize: 1024` and `WithTransform`;
    - otherwise: `CGImageSourceCreateImageAtIndex`.
 
@@ -161,7 +165,7 @@ Behaviour of the controller:
 
 Saving uses `CGImageDestination` (PNG). The shipped pictures load through the same function at startup.
 
-Import from the settings panel runs on a `.userInitiated` queue, with the result applied on the main thread.
+Import from the settings panel runs on a `.userInitiated` queue, with the result applied on the main thread. The file is saved at once; if a switcher is open by then, the peek's reload waits for it to close (decision 5). The message line shows an error in red at once, and after a success the warnings still current (decision 8).
 
 The user-facing messages:
 
@@ -172,7 +176,7 @@ The user-facing messages:
 | `.animated` | "Animated PNGs aren't supported yet. Choose a still PNG." |
 | `.tooLarge` | "That picture is too large (at most 8192 px a side and 32 megapixels)." |
 | `.unreadable` | "That file can't be read as a picture." |
-| `.empty` | "That picture is fully transparent." |
+| `.empty` | "That picture has no visible pixels." |
 
 ### 7. Storage
 
@@ -185,10 +189,10 @@ The user-facing messages:
 | `meowtab.picture.few`, `.some`, `.many` | String (file name) | absent, meaning the shipped picture |
 
 - **Setting a picture.** Write `<mood>-<UUID>.png` with `.atomic`. Only then set the key, then delete the old file. If anything fails before the key is set, the old picture stays in use.
-- **Use default** removes the key and deletes the file.
+- **Use default** removes the key, and deletes a file only if the key names one of MeowTab's own `<mood>-<UUID>.png` files. A value MeowTab can't use, such as a hand-edited `../x.png`, is removed and never treated as a path.
 - **Restore defaults** removes all `meowtab.*` keys and deletes MeowTab's picture files. It never touches anything else in the folder.
 - **Orphans.** `removeOrphans()` runs at `setUp`. It deletes only files matching `^(few|some|many)-[0-9A-F-]{36}\.png$` that no key references.
-- **Fallback.** `PeekController.reload()` loads each saved picture through `PeekPicture.load`. If one fails, the mood falls back to the shipped picture and the failure is kept as a warning: "Your picture for “some” couldn't be loaded, so the default cat is shown." The settings section shows it, and it is logged. An invalid stored setting falls back the same way, with "Some saved MeowTab settings were invalid and were reset."
+- **Fallback.** `PeekController.reload()` loads each saved picture through `PeekPicture.load`. If one fails, the mood falls back to the shipped picture and the failure is kept as a warning: "Your picture for “some” couldn't be loaded, so the default cat is shown." The settings section shows it, and it is logged. An invalid stored setting falls back the same way, with "Some saved MeowTab settings were invalid, so their defaults are used." A picture key that isn't one of MeowTab's own file names counts as invalid too. `load()` never writes, so a bad value stays saved and the message returns at each launch, until the value is replaced: moving a control saves all four settings, Use default drops a picture key, and Restore defaults drops every key.
 - Settings-only changes reuse the decoded pictures; only a picture change re-decodes.
 
 ### 8. The MeowTab settings section
@@ -196,14 +200,15 @@ The user-facing messages:
 - **Registration.** `SettingsSectionDefinition(id: "meowtab", title: "MeowTab", symbol: .circledStar, builder: MeowTabSettingsTab.initTab, registerDynamicSearchContent: nil)` is the first entry of `sectionDefinitions()`. `MeowTabSettingsTab.cleanup()` is added to both cleanup lists. `.circledStar` is an existing glyph, which avoids regenerating the font subset. Being first, MeowTab is also the section Settings opens on (it selects `visibleSections[0]` by default, `SettingsWindow.swift:1191` at the baseline's HEAD); that is intended. Onboarding opens Appearance by its id, so it is unaffected.
 - **Layout.** Rows built like `GeneralTab`'s:
   1. **Pictures.** Three `PictureCard` views, one per mood. Each has:
-     - a 96×96 `NSImageView` that accepts `.fileURL` drops;
+     - a 96×96 `NSImageView` that never registers for drags, so a drop on the picture reaches the card, which takes `.fileURL` drops anywhere on it;
      - a title such as "Few · 1–2 windows", updated live from the thresholds;
      - "Choose…", which opens an `NSOpenPanel` with `allowedContentTypes = [.png]` (macOS 11+);
-     - "Use default", shown only for a custom picture.
+     - "Use default", shown whenever the mood's `meowtab.picture.<mood>` key holds anything, even a value MeowTab can't use.
   2. **Moods.** "Some from" and "Many from", each an `NSStepper` with a value label, using the clamping rules of decision 2.
   3. **Peek height.** "With 1 window" and "With many windows", each an `NSSlider` from 30 to 100 in whole percent with a value label, using the same clamping rules.
   4. **Restore defaults** button, and a message line in `secondaryLabelColor` (`systemRed` for errors).
-- **Applying changes.** Every change saves at once and calls `PeekController.reload(...)`, matching AltTab's apply-immediately settings. The switcher can't be open while the settings window has focus, so a session never sees a half-applied change.
+- **Applying changes.** Every change saves at once and calls `PeekController.reload(...)`, matching AltTab's apply-immediately settings. The switcher can't be open while the settings window has focus, so a session never sees a half-applied change. An import is the one change that can arrive while a session is open, because it finishes in the background; what follows its save waits for the session to end (decision 5).
+- **Message line.** An import error shows in red. After a control moves, or a picture is saved or cleared, the line shows the warnings still current after the reload, and is empty if there are none, instead of keeping or clearing whatever it showed. So an old error goes, and a warning that still applies, such as an unusable picture key, stays.
 - **Accessibility.** Every control has an accessibility label.
 - **Strings.** All use `NSLocalizedString` with English keys and no translations; the other 20 languages fall back to English.
 
@@ -222,7 +227,10 @@ All fixtures are generated at runtime into a fresh folder under `FileManager.def
   - `s = 1` and `reserve ≤ 0.30 × 600` for a 600-pt usable height, since a 160-pt box never needs more than 160 pt; `s < 1` and `reserve = 0.30 × 400` for a 400-pt one;
   - the pane cap;
   - pane `y` for a short and a tall pane;
-  - peek frame bottom = pane top, `x` = pane `minX` + 24.
+  - peek frame bottom = pane top, `x` = pane `minX` + 24;
+  - a 43-pt corner puts `x` at pane `minX` + 43 with the same size, and a 23-pt corner keeps 24;
+  - a 132-pt pane with 23-pt corners scales the peek and its image by 84/160, so the peek ends 24 pt from the pane's right edge;
+  - a pane no wider than its two margins has no peek.
 - **`PeekPictureTests`:**
   - a 512² transparent PNG with padding is accepted with the right span (±1 row);
   - 2000×1000 becomes 1024×512 with a transparent corner kept;
@@ -230,7 +238,7 @@ All fixtures are generated at runtime into a fresh folder under `FileManager.def
   - a GIF gives `.notPNG`;
   - a two-frame APNG written with `kCGImagePropertyAPNGDelayTime` gives `.animated`;
   - the first 100 bytes of a PNG give `.unreadable`;
-  - 10 MiB + 1 byte of filler named `.png` gives `.tooBig`;
+  - 10 MB + 1 byte (10,000,001 bytes) of filler named `.png` gives `.tooBig`;
   - 8200×4 gives `.tooLarge`;
   - a fully transparent PNG gives `.empty`.
 - **`MeowTabStoreTests`:**
@@ -241,6 +249,7 @@ All fixtures are generated at runtime into a fresh folder under `FileManager.def
   - with the folder made read-only (`0o500`), setting fails and the previous key and file survive;
   - deleting the import source doesn't affect reload;
   - "Use default" and "Restore defaults" remove only MeowTab's files;
+  - a hand-edited picture value (a path or a number) warns at every load and still offers Use default, which removes the key and deletes no file;
   - orphan removal spares files that don't match the pattern.
 
 ### 10. Adding files to `project.pbxproj` without Xcode
@@ -271,6 +280,7 @@ If it doesn't work within the time box, record what failed and rely on acceptanc
 
 - **The peek's ordering in fullscreen Spaces and across displays isn't testable on CI** → Follows the codebase's own attached-panel precedent (`SearchDiscoveryHint`). Fullscreen, display and scale cases are listed for acceptance.
 - **ImageIO may not report APNG frames as expected** → The test exposes it on CI, and decision 6 names the fallback.
-- **`TilesPanel.updateMaxPossibleThumbnailSize` may be stale after a picture change shifts the cap** → The capture buffer is at most a little larger than needed. Accepted.
+- **`TilesPanel.maxPossibleThumbnailSize` may go stale when a picture or setting change shifts the cap** → `PeekController.reload` calls `TilesPanel.updateMaxPossibleThumbnailSize()`, so thumbnail captures follow a changed reserve at once. Launch is the exception: upstream sizes them before `setUp` creates the panel, and `setUp`'s own reload leaves them alone, so until the first later reload or upstream's own reset a capture is at most a little larger than needed. Accepted.
+- **Smaller tiles** → With thumbnails, the pane's cap lowers `maxThumbnailsHeight`, which upstream divides by its row count to size every tile. So tiles shrink whenever the usable height minus the reserve and the margins falls below upstream's cap, even with few windows: on a 1440×900 display with the Dock showing (usable height about 805 pt), the cap falls from 684 to 597 pt on macOS 15, so tiles are about 13 % smaller. A reserve that followed the count would instead resize the tiles as windows open and close. Accepted.
 - **Hand-edited project file** → Done once, with stubs (task 1.1). Later tasks don't touch it.
 - **Picture work in Settings blocks the UI** → Import runs off the main thread, and output is capped at 1024 px.

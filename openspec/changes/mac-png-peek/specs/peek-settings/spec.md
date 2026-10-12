@@ -18,7 +18,7 @@ Every change SHALL apply at once and be used by the next switcher session.
 
 #### Scenario: First use
 - **WHEN** the user opens the MeowTab section before changing anything
-- **THEN** it shows the three shipped cats titled "1–2 windows", "3–7 windows" and "8+ windows", thresholds 3 and 8, and heights 80 % and 95 %
+- **THEN** it shows the three shipped cats titled "Few · 1–2 windows", "Some · 3–7 windows" and "Many · 8+ windows", thresholds 3 and 8, and heights 80 % and 95 %
 
 ### Requirement: Only valid values
 The controls SHALL keep `2 ≤ someFrom < manyFrom ≤ 30` and `30 % ≤ minShare < maxShare ≤ 100 %`. Moving one value past the other SHALL push the other along. Invalid stored values SHALL fall back to the defaults for that pair, and the message line SHALL say so.
@@ -29,10 +29,10 @@ The controls SHALL keep `2 ≤ someFrom < manyFrom ≤ 30` and `30 % ≤ minShar
 
 #### Scenario: Hand-edited invalid values
 - **WHEN** the stored thresholds are 9 and 5
-- **THEN** the switcher uses 3 and 8, and the section says some saved settings were reset
+- **THEN** the switcher uses 3 and 8, and the section says some saved settings were invalid and their defaults are used
 
 ### Requirement: Choose or drop a PNG for each mood
-Each card SHALL accept a PNG chosen with "Choose…" or dropped on it, and SHALL show it at once. Only that mood SHALL change. "Use default" SHALL put that mood's shipped cat back.
+Each card SHALL accept a PNG chosen with "Choose…" or dropped on it, and SHALL show it at once. Only that mood SHALL change. "Use default" SHALL put that mood's shipped cat back, and SHALL be offered whenever the mood has a saved picture setting, even one MeowTab can't use.
 
 #### Scenario: A custom "many" picture
 - **WHEN** the user drops a transparent PNG on the many card

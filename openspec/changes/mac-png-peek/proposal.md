@@ -8,7 +8,7 @@ The peek is what makes MeowTab MeowTab: a picture sitting on the switcher's top-
 
 ## What Changes
 
-- **The peek.** A click-through picture sits on the AltTab pane's top-left edge, 24 pt in from the pane's left edge. Only the part above the pane's top edge shows. It appears with the pane and disappears with it. It never takes focus, clicks or keyboard input, and screen readers ignore it.
+- **The peek.** A click-through picture sits on the AltTab pane's top-left edge, 24 pt in from the pane's left edge, or further in where the pane's corners are rounder, as on macOS 26. Only the part above the pane's top edge shows. It appears with the pane and disappears with it. It never takes focus, clicks or keyboard input, and screen readers ignore it.
 - **Three moods by window count**, with the same rules and defaults as Windows MeowTab:
   - few for 1–2 windows, some for 3–7, many for 8 or more;
   - "windows" means real windows the switcher lists, scrolled-out ones included; app-only placeholder tiles don't count;
@@ -53,4 +53,4 @@ None.
   - `src/switcher/main-window/TilesPanel.swift`: `updateContents`, `repositionOrFreeze`, `orderOut`, `show`, `maxThumbnailsHeight`;
   - `src/switcher/search-discovery/SearchDiscoveryHint.swift`: one line in `prepareFrame`, so the search hint moves below the pane instead of covering the picture;
   - `src/preferences/settings-window/SettingsWindow.swift`: one section entry and two cleanup calls.
-- **Project and docs:** `alt-tab-macos.xcodeproj/project.pbxproj` (new files, the group and build phases); `docs/acknowledgments.md` (the cat pictures' MIT notice); `README.md` (the peek and own pictures); `ROADMAP.md`.
+- **Project and docs:** `alt-tab-macos.xcodeproj/project.pbxproj` (new files, the group and build phases); `docs/acknowledgments.md` (the cat pictures' MIT notice); `NOTICE.md` (the mac-png-peek modifications); `docs/acceptance.md` (the peek and settings rows); `.github/workflows/ci.yml` (the bundled-picture check and the manual screenshot job); `README.md` (the peek and own pictures); `ROADMAP.md`.

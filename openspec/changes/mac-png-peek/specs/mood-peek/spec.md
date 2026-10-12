@@ -7,7 +7,7 @@ The mood picture that peeks over the switcher's top-left edge: which picture sho
 ## ADDED Requirements
 
 ### Requirement: Count the real windows the switcher lists
-The count SHALL be the number of real windows the switcher lists before any search query is applied, scrolled-out tiles included. App-only placeholder tiles SHALL NOT count, and a group of tabs SHALL count once. With a count of zero the picture SHALL be hidden, and the switcher SHALL work as upstream.
+The count SHALL be the number of real windows the switcher lists before any search query is applied, scrolled-out tiles included. App-only placeholder tiles SHALL NOT count, and a group of tabs SHALL count once while the switcher groups tabs, as it does by default. With a count of zero the picture SHALL be hidden, and the placeholder tiles SHALL work as upstream.
 
 #### Scenario: Scrolled grid with placeholders
 - **WHEN** the switcher lists ten real windows and two app-only placeholders, and six tiles are in view
@@ -44,11 +44,15 @@ The share of the picture's art shown above the pane SHALL be `minShare + (maxSha
 - **THEN** the rows above the pane are 200 + 0.80 × 112 ≈ 290 picture rows, scaled to the display size
 
 ### Requirement: Where the picture sits
-The picture SHALL keep its aspect ratio within a 160-point box. It SHALL sit with its bottom on the pane's top edge, 24 points in from the pane's left edge. The part below the pane's edge SHALL be cut off, never drawn over the pane.
+The picture SHALL keep its aspect ratio within a 160-point box. Its visible part SHALL sit with its bottom on the straight part of the pane's top edge, starting 24 points in from the pane's left edge, or as far in as the pane's corner radius if that is larger. On a pane too narrow for that, the picture SHALL be scaled down to end as far from the pane's right edge as it starts from the left. The rest SHALL be cut off at the pane's top edge, never drawn over the pane.
 
 #### Scenario: Two displays with different scales
 - **WHEN** the switcher opens on a Retina display and then on a non-Retina one
 - **THEN** each time the picture is sharp and aligned with the pane's top-left edge
+
+#### Scenario: Rounded corners and a narrow pane
+- **WHEN** the pane's corners have a radius of 43 points, or the pane is 132 points wide with 23-point corners
+- **THEN** the picture starts 43 points in, or is scaled down to 84 points wide between 24-point margins, and none of it hangs past the straight part of the pane's top edge
 
 ### Requirement: Room for the peek
 The picture's top SHALL stay at least 12 points below the top of the display's usable area, which excludes the menu bar and the Dock. The pane SHALL leave room for the tallest peek of the three moods at `maxShare`, and that room SHALL NOT change while the switcher is open. The picture SHALL be scaled down only as far as needed to keep that room within 30 % of the usable height.
@@ -81,7 +85,7 @@ The picture SHALL appear when the pane appears, and SHALL disappear as soon as t
 - **THEN** it never lands on the picture
 
 ### Requirement: Static pictures, cheap to show
-The MVP SHALL show static pictures only. Pictures SHALL be decoded at launch and when a picture setting changes, and never while the switcher is open. One peek panel SHALL be created at launch and reused. No timer or recurring work SHALL exist for the peek. A selection step SHALL cost the peek no more than comparing the count and the pane frame. Each peek update SHALL log its duration for the acceptance run.
+The MVP SHALL show static pictures only. Pictures SHALL be decoded at launch and when a picture setting changes, and never while the switcher is open. A picture saved while it is open SHALL be used from the next session. One peek panel SHALL be created at launch and reused. No timer or recurring work SHALL exist for the peek. A selection step SHALL cost the peek no more than comparing the count and the pane frame. Each peek update SHALL log its duration for the acceptance run.
 
 #### Scenario: Measuring on a real Mac
 - **WHEN** the tester opens the switcher 20 times with about 10 windows and reads the peek log
