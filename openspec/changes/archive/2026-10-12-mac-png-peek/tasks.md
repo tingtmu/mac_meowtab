@@ -84,4 +84,11 @@ Starts after `mac-fork-baseline` is archived. Group 1 wires every new file into 
   - https://github.com/tingtmu/mac_meowtab/actions/runs/38131940252 (`f9c5b52`): all seven jobs green.
   - The README was read against both specs; the extra preference domains (`.license`, `.usage`) are listed as optional removals.
   - **Known issues** also say that General's Import and Reset reset MeowTab's settings, and its picture copies at the next start.
-- [ ] 6.2 On the latest `main` run, confirm that every automated check above is green and that the acceptance list holds every scenario not covered by unit tests. Then archive this change (`openspec archive mac-png-peek`).
+- [x] 6.2 On the latest `main` run, confirm that every automated check above is green and that the acceptance list holds every scenario not covered by unit tests. Then archive this change (`openspec archive mac-png-peek`).
+  - https://github.com/tingtmu/mac_meowtab/actions/runs/38187053435 (`2bc0afe`): all seven jobs green, with `screenshot` skipped on the push. 1542 tests, 0 failures, on macos-15, macos-15-intel and macos-26: `MoodPeekTests` 32, `PeekPictureTests` 11 and `MeowTabStoreTests` 16.
+  - **Final review:** two reviews of the whole change, one of the code and one of the specs, coverage and docs, found no crash or data-loss bug, and clean hooks. Their fixes are in `a7b91d1` (code) and `2bc0afe` (plan, acceptance list and README):
+    - the picture sits on the straight part of the pane's top edge, since macOS 26 rounds the pane's corners by 43–75 pt, and it shrinks to fit a pane too narrow for it;
+    - an import that finishes while the switcher is open is applied when the switcher closes;
+    - thumbnail captures follow the peek's room, the message line and "Use default" handle hand-edited values, and the import limit is 10 MB.
+  - **Coverage:** every scenario of both specs maps to a unit test, an acceptance row, or both. To get there, the acceptance list gained "Only placeholders", the 30-window check and the selection steps, and its search rows now press S before typing.
+  - **For the owner:** on a 1440×900 laptop, tiles are about 13 % smaller than upstream's, because the pane keeps the peek's room at every count (design.md, Risks).

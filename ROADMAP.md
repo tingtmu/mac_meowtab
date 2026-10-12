@@ -5,7 +5,7 @@ Where MeowTab Mac goes after its first MVP. Each item says what to build, why, a
 **Today:** the MVP is planned as three OpenSpec changes, done in order. The first two are done.
 
 1. [mac-fork-baseline](openspec/changes/archive/2026-10-11-mac-fork-baseline/proposal.md) (done, 2026-10-11): the AltTab v11.9.0 fork, renamed, offline, Pro unlocked, and green on CI. Its specs are in `openspec/specs/`.
-2. [mac-png-peek](openspec/changes/mac-png-peek/proposal.md) (done, 2026-10-11): the peek with three static PNG moods and a MeowTab settings section.
+2. [mac-png-peek](openspec/changes/archive/2026-10-12-mac-png-peek/proposal.md) (done, 2026-10-12): the peek with three static PNG moods and a MeowTab settings section. Its specs are in `openspec/specs/`.
 3. [mac-preview-release](openspec/changes/mac-preview-release/proposal.md): stable signing, packages, the install guide, one real-Mac acceptance run, and the 0.1.0 preview.
 
 AltTab's own features stay as upstream has them. GIF playback, background cleaning and trimming AltTab down are deferred.
@@ -21,8 +21,8 @@ AltTab's own features stay as upstream has them. GIF playback, background cleani
 5. **Private demos.** Documentation screenshots and recordings use dedicated demo windows, a stand-in background, and isolated settings.
 
 Planning map:
-- [mood and peek behavior](openspec/changes/mac-png-peek/specs/mood-peek/spec.md)
-- [picture import and settings](openspec/changes/mac-png-peek/specs/peek-settings/spec.md)
+- [mood and peek behavior](openspec/specs/mood-peek/spec.md)
+- [picture import and settings](openspec/specs/peek-settings/spec.md)
 - [releases and acceptance](openspec/changes/mac-preview-release/specs/mac-release/spec.md)
 
 Once a change is archived, its specs live in `openspec/specs/`. Later picture work should build on the picture-loading code in `src/meowtab/PeekPicture.swift`; the Windows version is a behavior reference.
