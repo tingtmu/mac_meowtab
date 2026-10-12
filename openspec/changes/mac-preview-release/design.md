@@ -63,23 +63,24 @@ After signing, the requirement is checked:
 
 ### 2. One build script, two workflows
 
-- **`scripts/meowtab/build.sh <signing identity>`** holds `mac-fork-baseline`'s build steps: write `config/local.xcconfig`, run `xcodebuild`, check the bundle, run the offline checks, compare `LICENCE.md`. `ci.yml` calls it with `-`.
-- **`ci.yml`** gains `on: workflow_call`, so the release workflow reuses its build, test and launch jobs unchanged.
-- **`.github/workflows/release.yml`** runs on tags `v*` and on `workflow_dispatch` (a dry run with no release). It needs `permissions: contents: write`. Its jobs:
-  1. **`ci`:** `uses: ./.github/workflows/ci.yml`. A failing test or launch stops the release.
-  2. **`package` (macos-15, needs `ci`):**
-     1. Version check. The tag must be `vX.Y.Z` or `vX.Y.Z-rc.N`, and `X.Y.Z` must equal `MEOWTAB_VERSION`; otherwise fail before building. `CFBundleShortVersionString` stays `X.Y.Z`; the `rc` suffix appears only in the tag and the file names.
+- **`scripts/meowtab/build.sh <signing identity>`** holds the CI `build` job's steps, in their old order: compare `LICENCE.md`, select Xcode, write `config/local.xcconfig`, run `xcodebuild`, check the bundle (architectures, signature, identity), run the offline checks, and check the bundled pictures. `ci.yml` calls it with `-`.
+- **`ci.yml`** gains `on: workflow_call`, so the release workflow reuses its build, test and launch jobs unchanged. Its `screenshot` job also requires `github.workflow == 'CI'`. In a called workflow the `github` context is the caller's, so a dry run, which is a `workflow_dispatch` too, would otherwise run it.
+- **`.github/workflows/release.yml`** runs on tags `v*` and on `workflow_dispatch` (a dry run with no release). Only `package` gets `permissions: contents: write`; the other jobs read. Its jobs:
+  1. **`version` (ubuntu):** the version check, first, so a bad tag fails before anything is built. The tag must be `vX.Y.Z` or `vX.Y.Z-rc.N`, and `X.Y.Z` must equal `MEOWTAB_VERSION`. `CFBundleShortVersionString` stays `X.Y.Z`; the `rc` suffix appears only in the tag and the file names. A dry run needs `MEOWTAB_VERSION` to be `X.Y.Z`, and uses the name `vX.Y.Z-dry-run-<short commit>` in place of the tag below.
+  2. **`ci` (needs `version`):** `uses: ./.github/workflows/ci.yml`. A failing test or launch stops the release.
+  3. **`package` (macos-15, needs both):**
+     1. On a tag that already has a published release, it stops here and succeeds (decision 5).
      2. `setup_release_signing.sh`, then `build.sh "MeowTab for Mac"`.
-     3. The requirement check of decision 1, then `codesign --verify --deep --strict`.
-     4. Copy `MeowTab.app`, `LICENCE.md`, `NOTICE.md` and `docs/install.md` (as `INSTALL.md`) into a folder `MeowTab-<tag>/`. Run `ditto -c -k --sequesterRsrc --keepParent MeowTab-<tag> MeowTab-<tag>-mac.zip`, so unzipping gives that folder. Run `shasum -a 256 MeowTab-<tag>-mac.zip > SHA256SUMS.txt`.
-     5. On a tag: `gh release create <tag> --draft --prerelease --title "MeowTab for Mac <tag>" --notes-file notes.md MeowTab-<tag>-mac.zip SHA256SUMS.txt`. On a dry run: upload both files as artifacts.
+     3. The requirement check of decision 1, then `codesign --verify --deep --strict`. Until `docs/designated-requirement.txt` is committed, a dry run warns and goes on, and a tag fails.
+     4. Copy `MeowTab.app` (with `ditto`, then verify the copy's signature), `LICENCE.md`, `NOTICE.md` and `docs/install.md` (as `INSTALL.md`) into a folder `MeowTab-<tag>/`. Run `ditto -c -k --sequesterRsrc --keepParent MeowTab-<tag> MeowTab-<tag>-mac.zip`, so unzipping gives that folder. Run `shasum -a 256 MeowTab-<tag>-mac.zip > SHA256SUMS.txt`.
+     5. On a tag: `gh release create <tag> --draft --prerelease --verify-tag --title "MeowTab for Mac <tag>" --notes-file notes.md MeowTab-<tag>-mac.zip SHA256SUMS.txt`. On a dry run: upload the zip, `SHA256SUMS.txt` and `notes.md` as one artifact.
 - **Release notes** come from `docs/release-notes-template.md`, filled by the workflow. They contain:
-  - the label: "Test candidate — not yet checked on a real Mac" for an `rc`, "Preview" for `v0.1.0`;
+  - the label: "Test candidate — not yet checked on a real Mac" for an `rc`, "Preview" for `v0.1.0`, and "Dry run — not a release" for a dry run;
   - the SHA-256 of the zip;
   - the source, as a link to the exact tag. This is the Corresponding Source of GPL-3.0 §6; GitHub also attaches source archives;
   - signing: "Self-signed, not notarized. macOS asks once on first open; see INSTALL.md.";
   - compatibility: target macOS 12.0+ on Apple silicon and Intel; the CI runtimes of this run; the real-Mac record, if any; "macOS 12–14 not tested";
-  - credit: "Based on AltTab by Louis Pontoise", with the upstream and sponsor links.
+  - credit: "Based on AltTab by Louis Pontoise and contributors", with the upstream and sponsor links.
 
 ### 3. The install guide (`docs/install.md`)
 
@@ -91,10 +92,10 @@ Short, numbered steps:
    - **macOS 15 and 26:** open MeowTab, close the warning, then go to System Settings > Privacy & Security, click Open Anyway within the hour, and enter your password.
    - **macOS 14 and earlier:** Control-click MeowTab > Open.
 4. Grant Accessibility (required). Grant Screen Recording, or skip it to get app icons instead of previews.
-5. If AltTab is installed, quit it, or give one of the two apps another shortcut. Both use ⌥⇥.
+5. If AltTab is installed, quit it, or give one of the two apps other shortcuts. Both use ⌥⇥, and ⌥ with the key above Tab.
 6. MeowTab starts at login by default; turn this off in Settings > General.
-7. **Updating:** quit MeowTab and replace the app. Permission grants and pictures carry over. If macOS asks again, which happens only after a signing-certificate change, remove MeowTab from the permission list and add it again.
-8. **Removing:** quit MeowTab, delete the app, and optionally its data: `rm -r ~/Library/Application\ Support/MeowTab`, then `defaults delete io.github.tingtmu.meowtab.macos`.
+7. **Updating:** quit MeowTab and replace the app. Permission grants and pictures carry over. The new copy is a new download, so its first open may need step 3 again. If macOS asks for the permissions again, which happens only after a signing-certificate change, remove MeowTab from the permission list and add it again.
+8. **Removing:** turn off start at login (step 6; that removes the login item), quit MeowTab, delete the app, and optionally its data: `rm -r ~/Library/Application\ Support/MeowTab`, then `defaults delete io.github.tingtmu.meowtab.macos`.
 
 The guide never suggests disabling Gatekeeper or SIP, nor `spctl --master-disable`.
 
@@ -126,7 +127,7 @@ gh release create v0.1.0 --prerelease --title "MeowTab for Mac 0.1.0 (preview)" 
   --notes-file notes.md MeowTab-v0.1.0-mac.zip SHA256SUMS.txt
 ```
 
-- **Tag push.** Pushing `v0.1.0` also triggers `release.yml`. Its draft is deleted unused (or the workflow skips tags that already have a published release).
+- **Tag push.** Pushing `v0.1.0` also triggers `release.yml`. Its `package` job starts only after CI, when the release above exists, so it skips the tag without building. If the release comes later than that, the workflow makes a draft, which is deleted unused.
 - **Notes** link `docs/acceptance/v0.1.0-rc.N.md`.
 - **README:** the Quick start switches to the download link and the install guide.
 

@@ -25,3 +25,8 @@ Listed by [OpenSpec](openspec/) change name. Later changes are appended here.
 - **Settings:** a MeowTab section, first in the Settings sidebar, sets each mood's picture, the mood thresholds and the peek height. Users' own PNGs are copied to `~/Library/Application Support/MeowTab/images/`.
 - **Upstream code:** one-line hooks, each marked `// MeowTab:`, in `src/App.swift`, `src/switcher/main-window/TilesPanel.swift`, `src/switcher/search-discovery/SearchDiscoveryHint.swift` and `src/preferences/settings-window/SettingsWindow.swift`. The new code is in `src/meowtab/`.
 - **Pictures:** the three cat PNGs from Windows MeowTab (MIT licence, see `docs/acknowledgments.md`) ship in `resources/meowtab/`.
+
+### mac-preview-release
+
+- **Signing:** upstream's `scripts/codesign/generate_selfsigned_certificate.sh` takes an optional certificate name and validity. Releases are signed with the project's own self-signed certificate, so macOS keeps the permissions users grant through updates. They are not notarized.
+- **Releases:** a new workflow, `.github/workflows/release.yml`, runs the CI workflow, then packages the signed app with `INSTALL.md`, `LICENCE.md` and this notice as a zip, with its SHA-256, in a draft GitHub release. The CI build steps moved into `scripts/meowtab/build.sh`.

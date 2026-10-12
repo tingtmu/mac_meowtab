@@ -1,0 +1,176 @@
+name: Release
+
+# Builds, signs and packages MeowTab for Mac. A tag vX.Y.Z or vX.Y.Z-rc.N gets a draft pre-release. A manual run is a dry
+# run: it uploads the package as an artifact and creates no release. Why: openspec/changes/mac-preview-release/design.md
+# decision 2.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Checks the tag against MEOWTAB_VERSION before anything is built, and names the package.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.check.outputs.name }}
+      is_tag: ${{ steps.check.outputs.is_tag }}
+      label: ${{ steps.check.outputs.label }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the version
+        id: check
+        run: |
+          version=$(tr -d '[:space:]' < MEOWTAB_VERSION)
+          # Only a tag push makes a release. A manual run is a dry run, even when it is started from a tag.
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            tag=$GITHUB_REF_NAME
+            tag_re='^v([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?$'
+            if [[ ! $tag =~ $tag_re ]]; then
+              echo "::error::tag $tag is neither vX.Y.Z nor vX.Y.Z-rc.N"
+              exit 1
+            fi
+            tag_version=${BASH_REMATCH[1]}
+            rc=${BASH_REMATCH[2]}
+            if [ "$tag_version" != "$version" ]; then
+              echo "::error::tag $tag is for $tag_version, but MEOWTAB_VERSION is '$version'"
+              exit 1
+            fi
+            name=$tag
+            is_tag=true
+            if [ -n "$rc" ]; then label="Test candidate — not yet checked on a real Mac"; else label="Preview"; fi
+          else
+            version_re='^[0-9]+\.[0-9]+\.[0-9]+$'
+            if [[ ! $version =~ $version_re ]]; then
+              echo "::error::MEOWTAB_VERSION is '$version', expected X.Y.Z"
+              exit 1
+            fi
+            name="v$version-dry-run-${GITHUB_SHA::7}"
+            is_tag=false
+            label="Dry run — not a release"
+          fi
+          echo "name: $name"
+          echo "label: $label"
+          {
+            echo "name=$name"
+            echo "is_tag=$is_tag"
+            echo "label=$label"
+          } >> "$GITHUB_OUTPUT"
+
+  # The whole CI workflow: build, Debug build, unit tests and launch checks. Any failure stops the release.
+  ci:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    needs: [version, ci]
+    runs-on: macos-15
+    permissions:
+      contents: write
+    env:
+      APP: DerivedData/Build/Products/Release/MeowTab.app
+      NAME: ${{ needs.version.outputs.name }}
+      IS_TAG: ${{ needs.version.outputs.is_tag }}
+      LABEL: ${{ needs.version.outputs.label }}
+    steps:
+      - uses: actions/checkout@v7
+      # design.md decision 5: the v0.1.0 promotion publishes the accepted rc's zip, and its tag push still runs this workflow.
+      - name: Skip a tag that is already published
+        id: existing
+        if: needs.version.outputs.is_tag == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # gh fails, and says why, when the tag has no release yet.
+          if is_draft=$(gh release view "$NAME" --json isDraft --jq .isDraft) && [ "$is_draft" = false ]; then
+            echo "::notice::$NAME already has a published release, so this run builds and uploads nothing"
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Set up the signing identity
+        if: steps.existing.outputs.published != 'true'
+        env:
+          MEOWTAB_CERT_P12: ${{ secrets.MEOWTAB_CERT_P12 }}
+          MEOWTAB_CERT_PASSWORD: ${{ secrets.MEOWTAB_CERT_PASSWORD }}
+        run: bash scripts/meowtab/setup_release_signing.sh
+      - name: Build and check
+        if: steps.existing.outputs.published != 'true'
+        run: bash scripts/meowtab/build.sh "MeowTab for Mac"
+      # Permission grants follow the designated requirement (design.md decision 1), so it must not change between releases.
+      - name: Check the designated requirement
+        if: steps.existing.outputs.published != 'true'
+        run: |
+          file=docs/designated-requirement.txt
+          actual=$(codesign -d -r- "$APP")
+          echo "$actual"
+          if [ ! -f "$file" ]; then
+            if [ "$IS_TAG" = true ]; then
+              echo "::error::$file is missing, so this build can't be checked. Commit the requirement that a dry run prints."
+              exit 1
+            fi
+            echo "::warning::$file is missing. Commit the requirement printed above as that file."
+            exit 0
+          fi
+          expected=$(cat "$file")
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::the designated requirement differs from $file, which holds: $expected"
+            exit 1
+          fi
+          echo "It matches $file."
+      - name: Check the signature
+        if: steps.existing.outputs.published != 'true'
+        run: codesign --verify --deep --strict --verbose=2 "$APP"
+      - name: Package
+        if: steps.existing.outputs.published != 'true'
+        run: |
+          dir="MeowTab-$NAME"
+          mkdir "$dir"
+          # ditto keeps the bundle's symlinks and extended attributes, so the copy's signature stays intact.
+          ditto "$APP" "$dir/MeowTab.app"
+          cp LICENCE.md NOTICE.md "$dir/"
+          cp docs/install.md "$dir/INSTALL.md"
+          codesign --verify --deep --strict --verbose=2 "$dir/MeowTab.app"
+          zip="$dir-mac.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$dir" "$zip"
+          shasum -a 256 "$zip" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          echo "ZIP=$zip" >> "$GITHUB_ENV"
+      # The template names ci.yml's test and launch runners; keep the two in step.
+      - name: Write the release notes
+        if: steps.existing.outputs.published != 'true'
+        run: |
+          sha256=$(cut -d ' ' -f 1 SHA256SUMS.txt)
+          # A tag run links its tag. A dry run has no tag, so it links its commit.
+          if [ "$IS_TAG" = true ]; then ref=$NAME; else ref=$GITHUB_SHA; fi
+          # Each {{KEY}} in the template becomes the value of KEY below. perl inserts the values as they are, so slashes,
+          # & and backslashes in them need no escaping.
+          LABEL="$LABEL" ZIP="$ZIP" SHA256="$sha256" REF="$ref" \
+            RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            perl -pe 's/\{\{(LABEL|ZIP|SHA256|REF|RUN_URL)\}\}/$ENV{$1}/g' docs/release-notes-template.md > notes.md
+          if grep -n '{{' notes.md; then
+            echo "::error::notes.md still has the placeholders above, which this step doesn't fill"
+            exit 1
+          fi
+          cat notes.md
+      - name: Create the draft release
+        if: steps.existing.outputs.published != 'true' && needs.version.outputs.is_tag == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$NAME" --draft --prerelease --verify-tag --title "MeowTab for Mac $NAME" \
+            --notes-file notes.md "$ZIP" SHA256SUMS.txt
+      - name: Upload the dry run
+        if: needs.version.outputs.is_tag != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: MeowTab-${{ needs.version.outputs.name }}-mac
+          if-no-files-found: error
+          path: |
+            ${{ env.ZIP }}
+            SHA256SUMS.txt
+            notes.md
