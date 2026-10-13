@@ -4,6 +4,18 @@ MeowTab for Mac is a modified version of [AltTab](https://github.com/lwouis/alt-
 
 AltTab and MeowTab are free software under the GNU General Public License v3.0 (see [LICENCE.md](LICENCE.md)). [NOTICE.md](NOTICE.md) says what this fork changed.
 
+## Contents
+
+- [Status](#status)
+- [What MeowTab adds](#what-meowtab-adds)
+- [Install](#install): [one command in Terminal](#install), or [download by hand](#download-by-hand)
+- [The peek](#the-peek): the cat picture, its moods and where it sits
+- [Use your own pictures](#use-your-own-pictures)
+- [Remove MeowTab's data](#remove-meowtabs-data)
+- [Compatibility](#compatibility)
+- [Known issues](#known-issues)
+- [Building](#building): CI and the release workflow
+
 ## Status
 
 In development. Test candidates for an acceptance run, on a Mac or a GitHub-hosted macOS runner, are published as they're ready (see [Install](#install)), and the 0.1.0 preview follows once one passes. CI builds are ad-hoc-signed test builds: macOS forgets the Accessibility and Screen Recording permissions you grant on every new build, so they are not for daily use. The plan is in [`ROADMAP.md`](ROADMAP.md).
@@ -26,9 +38,13 @@ The easiest way is one command in Terminal. It downloads the release, checks it,
 curl -fsSL https://raw.githubusercontent.com/tingtmu/mac_meowtab/main/scripts/meowtab/install.sh | bash -s -- v0.1.0-rc.1
 ```
 
-The tag at the end is needed while only test candidates are published (see [Download by hand](#download-by-hand)); once a full release exists, leave `-s -- v0.1.0-rc.1` off to get the newest one. After a first install, MeowTab asks for Accessibility, which it needs, and Screen Recording, which is optional: without it the switcher shows app icons instead of window previews. Run the command again to update; an update keeps your permissions. The guide's [Quick install from Terminal](docs/install.md#quick-install-from-terminal) section says why this works, how to read the script first and how to remove MeowTab with one command.
+- **The tag:** `v0.1.0-rc.1` at the end is needed while only test candidates are published (see [Download by hand](#download-by-hand)). Once a full release exists, leave `-s -- v0.1.0-rc.1` off to get the newest one.
+- **Permissions:** after a first install, MeowTab asks for Accessibility, which it needs, and Screen Recording, which is optional: without it the switcher shows app icons instead of window previews.
+- **Updating:** run the same command again. An update keeps your permissions.
+- **Removing:** [`uninstall.sh`](docs/install.md#quick-install-from-terminal) removes MeowTab with one command, or see [Remove MeowTab's data](#remove-meowtabs-data) to keep your pictures and settings.
+- **Trust:** the guide's [Quick install from Terminal](docs/install.md#quick-install-from-terminal) section says why this skips "Open Anyway" and how to read the script first.
 
-[`docs/install.md`](docs/install.md) has the steps in full, and covers running beside AltTab, launch at login, updating and removing MeowTab. It ships in each zip as `INSTALL.md`.
+[`docs/install.md`](docs/install.md) has the steps in full. It covers [granting permissions](docs/install.md#4-grant-permissions), [running beside AltTab](docs/install.md#5-if-alttab-is-installed), [launch at login](docs/install.md#6-start-at-login), [updating](docs/install.md#7-updating) and [removing MeowTab](docs/install.md#8-removing-meowtab), and ships in each zip as `INSTALL.md`.
 
 ### Download by hand
 
@@ -106,7 +122,7 @@ The second keeps the usage counts that the About window shows:
 defaults delete io.github.tingtmu.meowtab.macos.usage
 ```
 
-If "Start at login" is on, turn it off in Settings > General before you remove MeowTab. That removes its login item from `~/Library/LaunchAgents`.
+To remove the app itself, see the guide's [Removing MeowTab](docs/install.md#8-removing-meowtab). If "Start at login" is on, turn it off in Settings > General before you remove MeowTab. That removes its login item from `~/Library/LaunchAgents`.
 
 ## Compatibility
 
