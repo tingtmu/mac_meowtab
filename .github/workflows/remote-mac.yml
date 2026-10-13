@@ -1,0 +1,155 @@
+name: Remote Mac session
+
+# Holds a GitHub-hosted Apple silicon Mac for a manual acceptance run over VNC, reachable only through the owner's
+# Tailscale network. A run with connect off is a dry run: it checks that Screen Sharing starts, then ends. Why:
+# openspec/changes/mac-preview-release/design.md decision 6.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Runner image
+        type: choice
+        options: [macos-26, macos-15]
+        default: macos-26
+      minutes:
+        description: Minutes to hold the session, 10 to 300
+        type: string
+        default: '90'
+      connect:
+        description: Connect over Tailscale and hold the session (off is a dry run)
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: remote-mac
+  cancel-in-progress: false
+
+jobs:
+  session:
+    runs-on: ${{ inputs.image }}
+    timeout-minutes: 330
+    env:
+      MINUTES: ${{ inputs.minutes }}
+    steps:
+      - name: Check the inputs
+        run: |
+          # The pattern comes first, so the arithmetic only ever sees two or three digits.
+          if [[ ! $MINUTES =~ ^[1-9][0-9]{1,2}$ ]] || (( MINUTES < 10 || MINUTES > 300 )); then
+            echo "::error::minutes is '$MINUTES', expected a whole number from 10 to 300"
+            exit 1
+          fi
+      # The password is chosen and used in this one step, so it reaches no other.
+      - name: Set up the session
+        env:
+          CONNECT: ${{ inputs.connect == true }}
+          # Empty in a dry run, which never reads the secret.
+          REMOTE_MAC_PASSWORD: ${{ inputs.connect == true && secrets.REMOTE_MAC_PASSWORD || '' }}
+        run: |
+          if [ "$CONNECT" = true ]; then
+            pw=$REMOTE_MAC_PASSWORD
+            if [ "${#pw}" -lt 8 ]; then
+              echo "::error::the REMOTE_MAC_PASSWORD secret is missing or shorter than 8 characters"
+              exit 1
+            fi
+          else
+            pw=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | cut -c 1-16)
+            echo "::add-mask::$pw"
+          fi
+          # Legacy VNC uses only the first 8 characters, which the full secret's mask doesn't cover.
+          echo "::add-mask::${pw:0:8}"
+          # macOS asks for an admin password at Gatekeeper's Open Anyway and when a permission is switched on, and the
+          # runner's own password is unknown.
+          if ! sudo dscl . -passwd "/Users/$USER" "$pw"; then
+            echo "::error::couldn't set the password of $USER"
+            exit 1
+          fi
+          ks=/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart
+          # Recent macOS refuses parts of kickstart, so its failures are only logged: the listener check below decides.
+          sudo "$ks" -activate -configure -access -on -privs -all || echo "kickstart -activate failed"
+          sudo "$ks" -configure -clientopts -setvnclegacy -vnclegacy yes || echo "kickstart -setvnclegacy failed"
+          # What -setvnclegacy writes, in case kickstart is refused: without it, Screen Sharing listens but takes no VNC password.
+          sudo defaults write /Library/Preferences/com.apple.RemoteManagement VNCLegacyConnectionsEnabled -bool true
+          # The legacy VNC password: its first 8 bytes, zero-padded and XORed with Apple's fixed key, in hex.
+          printf '%s' "${pw:0:8}" | perl -e '
+            my $p = do { local $/; <STDIN> };
+            my @p = unpack "C8", $p;
+            my @k = unpack "C*", pack "H*", "1734516E8BA8C5E2FF1C39567390ADCA";
+            printf "%02X", $_ ^ (shift(@p) // 0) for @k;
+            print "\n";
+          ' | sudo tee /Library/Preferences/com.apple.VNCSettings.txt > /dev/null
+          sudo "$ks" -restart -agent || echo "kickstart -restart failed"
+          listening() { sudo lsof -nP -iTCP:5900 -sTCP:LISTEN; }
+          sleep 3
+          if ! listening > /dev/null; then
+            echo "Nothing listens on port 5900 after kickstart, so start Screen Sharing with launchctl."
+            sudo launchctl enable system/com.apple.screensharing || true
+            # bootstrap fails when the service is already loaded, which is fine.
+            sudo launchctl bootstrap system /System/Library/LaunchDaemons/com.apple.screensharing.plist || true
+          fi
+          for _ in $(seq 15); do
+            if listening; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::nothing listens on TCP port 5900, so Screen Sharing didn't start"
+          exit 1
+      # Row 1 tests the first open of a self-signed app, which only means something with Gatekeeper on, as on a stock Mac.
+      - name: Turn Gatekeeper on
+        run: |
+          gatekeeper_on() { [[ $(spctl --status 2>/dev/null) == *"assessments enabled"* ]]; }
+          spctl --status || true
+          if ! gatekeeper_on; then
+            sudo spctl --global-enable || true
+            gatekeeper_on || sudo spctl --master-enable || true
+            spctl --status || true
+          fi
+          if ! gatekeeper_on; then
+            echo "::warning::Gatekeeper is still off, so row 1 (first open) won't reflect a stock Mac"
+          fi
+      # For the run sheet's Run details.
+      - name: Environment summary
+        run: |
+          {
+            echo '```'
+            sw_vers || true
+            echo "arch $(uname -m || true)"
+            echo "chip $(sysctl -n machdep.cpu.brand_string || true)"
+            csrutil status || true
+            echo "Gatekeeper: $(spctl --status 2>&1 || true)"
+            system_profiler SPDisplaysDataType | grep -i resolution || true
+            echo "user $USER"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      # Tailscale, not a public tunnel such as ngrok: VNC's password is 8 characters and its traffic unencrypted, so
+      # port 5900 must be reachable only from the owner's own devices.
+      - name: Connect to Tailscale
+        if: inputs.connect == true
+        # Pinned to a commit, since this third-party action receives TS_AUTHKEY.
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+          hostname: meowtab-mac-${{ github.run_id }}
+      - name: Show how to connect
+        if: inputs.connect == true
+        run: |
+          ip=$(tailscale ip -4 | head -n 1 || true)
+          if [ -z "$ip" ]; then
+            echo "::error::the runner has no Tailscale IPv4 address"
+            exit 1
+          fi
+          echo "VNC viewer address: $ip:5900 (the Tailscale IP, so MagicDNS isn't needed)"
+          echo "Login user: $USER"
+          echo "Password: the REMOTE_MAC_PASSWORD secret. A VNC password prompt takes its first 8 characters."
+          echo "The session lasts $MINUTES minutes. Cancel this run to end it early."
+      - name: Hold the session
+        if: inputs.connect == true
+        run: |
+          sleep $(( MINUTES * 60 ))
+          echo "::notice::the $MINUTES-minute session is over"
+      - name: Finish the dry run
+        if: inputs.connect == false
+        run: echo "::notice::Screen Sharing listens on port 5900. Dry run done, with no Tailscale and no hold."
