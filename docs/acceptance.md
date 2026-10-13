@@ -1,11 +1,12 @@
 # Acceptance run sheet
 
-The manual checks for MeowTab for Mac that CI cannot do. A tester with a real Mac works through the rows below on a release candidate, a GitHub pre-release such as `v0.1.0-rc.1`, installed as its `INSTALL.md` says.
+The manual checks for MeowTab for Mac that CI cannot do. A tester with a Mac, or the owner on a GitHub-hosted macOS runner (see [On a GitHub-hosted runner](#on-a-github-hosted-runner)), works through the rows below on a release candidate, a GitHub pre-release such as `v0.1.0-rc.1`, installed as its `INSTALL.md` says.
 
 ## Run details
 
 | Detail | Value |
 |--------|-------|
+| Environment: a Mac, or a GitHub-hosted runner over VNC (give its image, `macos-26` or `macos-15`) | |
 | Date | |
 | Candidate tag | |
 | macOS version (run `sw_vers` in Terminal) | |
@@ -31,6 +32,16 @@ MeowTab and AltTab both open their switcher with ⌥⇥, so keep AltTab quit, ex
 Whenever you put a new copy of MeowTab in Applications, macOS may block it the first time you open it. Open it as INSTALL.md step 3 says.
 
 **Privacy.** Any screenshot you take for this run, or send with it, shows only demo windows, such as empty TextEdit or Finder windows, over a plain desktop picture. It never shows your real windows, window titles or files.
+
+## On a GitHub-hosted runner
+
+Skip this section on a Mac of your own. A runner is a virtual Mac on Apple silicon that you control from your computer over VNC.
+
+- **Start a session.** In the repository's Actions tab, choose "Remote Mac session" > "Run workflow", or run `gh workflow run remote-mac.yml -R tingtmu/mac_meowtab --ref main -f image=macos-26 -f minutes=90`. The session lasts `minutes` (10 to 300); cancel the run to end it early. A runner starts fresh, with nothing installed, so do the whole run, through row 43, in one session.
+- **Connect.** You need Tailscale on your computer, signed in to the owner's network, and a VNC viewer that asks only for a password, such as TigerVNC, set to pass special keys (or "system keys") to the Mac, so that Windows doesn't take Alt+Tab: Alt is ⌥ and the Windows key is ⌘. The job's "Show how to connect" step prints the address, the runner's Tailscale IP with port 5900. The VNC password is the first 8 characters of the `REMOTE_MAC_PASSWORD` secret. Check that ⌘⇥ (Windows key + Tab) opens macOS's app switcher, not Windows' Task View. When macOS asks for an administrator, at Open Anyway or when you turn a permission on, replace the user name it fills in with `meowtester` and enter the whole secret.
+- **Download in Safari.** In the session, download the candidate's zip from its release page in Safari, so macOS marks it as downloaded from the internet, as it does for any user. Turn off Safari > Settings > General > "Open “safe” files after downloading" first, so the zip stays in Downloads. Before row 1, run `xattr -p com.apple.quarantine ~/Downloads/MeowTab-*.zip` in Terminal: it prints a value. If it prints nothing, mark row 1 "Not tested — no quarantine". If the job's log warned that Gatekeeper is off, mark row 1 "Not tested — Gatekeeper off".
+- **Row 40.** From `rc.2` on, row 40 needs the previous candidate installed and granted earlier in the same session: download it in Safari too, install it with INSTALL.md steps 1 to 4, then do row 40. On `rc.1`, there is no earlier candidate, so mark the row as it says.
+- **The VM note.** The runner is a VM with System Integrity Protection (SIP) off, so a pass on first open, permissions or updating is evidence, not proof that a stock Mac behaves the same. Start the Notes of rows 1, 2, 3 and 40 with "VM, SIP off". The other rows count fully.
 
 ## Rows
 
@@ -195,6 +206,8 @@ For the owner; the tester can skip this. The table lists every scenario of the p
 | mac-release | A candidate | CI: release.yml `package`; release step: tasks.md 4.1 |
 | mac-release | First open on macOS 26 | row 1 |
 | mac-release | One display only | row 20; release step: tasks.md 5.1 |
+| mac-release | Run on a GitHub-hosted runner | rows 1–3 and 40, with their "VM, SIP off" note; release step: tasks.md 4.2 |
+| mac-release | Dry run | release step: tasks.md 2.3 |
 | mac-release | Promoting rc.2 | release step: tasks.md 5.1 |
 | mac-release | Tester's screenshot | release step: tasks.md 5.1 |
 | mac-install-scripts | Fresh install of a candidate | CI: install-scripts.yml `check`, step "Fresh install"; row 43 |

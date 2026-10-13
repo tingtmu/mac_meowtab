@@ -6,7 +6,7 @@ AltTab and MeowTab are free software under the GNU General Public License v3.0 (
 
 ## Status
 
-In development. Test candidates for a real-Mac acceptance run are published as they're ready (see [Download](#download)), and the 0.1.0 preview follows once one passes. CI builds are ad-hoc-signed test builds: macOS forgets the Accessibility and Screen Recording permissions you grant on every new build, so they are not for daily use. The plan is in [`ROADMAP.md`](ROADMAP.md).
+In development. Test candidates for an acceptance run, on a Mac or a GitHub-hosted macOS runner, are published as they're ready (see [Download](#download)), and the 0.1.0 preview follows once one passes. CI builds are ad-hoc-signed test builds: macOS forgets the Accessibility and Screen Recording permissions you grant on every new build, so they are not for daily use. The plan is in [`ROADMAP.md`](ROADMAP.md).
 
 ## What MeowTab adds
 
@@ -27,7 +27,7 @@ Each release has:
 - `MeowTab-<version>-mac.zip`: the app, with `INSTALL.md`, `LICENCE.md` and `NOTICE.md`. `<version>` is the release's tag, such as `v0.1.0-rc.1`.
 - `SHA256SUMS.txt`: the zip's SHA-256 hash, to check your download.
 
-Test candidates (`vX.Y.Z-rc.N`) are pre-releases labelled "Test candidate — not yet checked on a real Mac". The preview (`v0.1.0`) is published only after a candidate passes an acceptance run on a real Mac, and it ships the same zip.
+Test candidates (`vX.Y.Z-rc.N`) are pre-releases labelled "Test candidate — not yet checked on a real Mac". The preview (`v0.1.0`) is published only after a candidate passes an acceptance run, on a Mac or a GitHub-hosted macOS runner, and it ships the same zip.
 
 Releases are self-signed, not notarized, so macOS asks once the first time you open the app. The signature stays the same from release to release, so the permissions you grant should survive updates.
 

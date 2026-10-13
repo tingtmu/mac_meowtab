@@ -6,7 +6,7 @@ Where MeowTab Mac goes after its first MVP. Each item says what to build, why, a
 
 1. `mac-fork-baseline` (done, 2026-10-11): the AltTab v11.9.0 fork, renamed, offline, Pro unlocked, and green on CI.
 2. `mac-png-peek` (done, 2026-10-12): the peek with three static PNG moods and a MeowTab settings section.
-3. `mac-preview-release`: stable signing, packages, the install guide, one real-Mac acceptance run, and the 0.1.0 preview.
+3. `mac-preview-release`: stable signing, packages, the install guide, one acceptance run on a Mac or a GitHub-hosted macOS runner, and the 0.1.0 preview.
 
 AltTab's own features stay as upstream has them. GIF playback, background cleaning and trimming AltTab down are deferred.
 
