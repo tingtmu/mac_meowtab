@@ -30,3 +30,10 @@ Listed by OpenSpec change name. Later changes are appended here.
 
 - **Signing:** upstream's `scripts/codesign/generate_selfsigned_certificate.sh` takes an optional certificate name and validity. Releases are signed with the project's own self-signed certificate, so macOS keeps the permissions users grant through updates. They are not notarized.
 - **Releases:** a new workflow, `.github/workflows/release.yml`, runs the CI workflow, then packages the signed app with `INSTALL.md`, `LICENCE.md` and this notice as a zip, with its SHA-256, in a draft GitHub release. The CI build steps moved into `scripts/meowtab/build.sh`.
+
+### mac-easy-install
+
+- **Scripts:** `scripts/meowtab/install.sh` and `scripts/meowtab/uninstall.sh` install, update and remove MeowTab with one Terminal command each. The install script checks the download's SHA-256, the app's signature and its designated requirement before it replaces anything.
+- **CI:** a new workflow, `.github/workflows/install-scripts.yml`, runs both scripts on macOS 15 and macOS 26 whenever either changes.
+- **Docs:** `docs/install.md` gains a "Quick install from Terminal" section, the README's Install section links it, and `docs/acceptance.md` gains rows 42 and 43.
+- **App:** unchanged.

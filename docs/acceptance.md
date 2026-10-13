@@ -102,6 +102,15 @@ These check AltTab's own behaviour, which MeowTab keeps.
 |---|------|----------|--------|-------|
 | 41 | fork-identity, mac-ci | Reading the repository; Notices at the root; Reading the README's compatibility section | | Open github.com/tingtmu/mac_meowtab in a browser. The file list includes NOTICE.md and LICENCE.md. Below it, before any instructions, the README credits AltTab and Louis Pontoise, with links that open github.com/lwouis/alt-tab-macos and github.com/sponsors/lwouis. Its Compatibility section says macOS 12.0 and later is targeted, names macOS 12, 13 and 14 as not tested, and lists the versions CI tested. |
 
+### 6. Terminal install and uninstall
+
+Do these two rows last, after rows 1–41, so that rows 1–3 still test the browser download. Rows 1–41 leave MeowTab installed, opened and granted, which is row 42's starting state. The removal command may ask for your account password (`sudo`).
+
+| # | Spec | Scenario | Result | Notes |
+|---|------|----------|--------|-------|
+| 42 | mac-install-scripts | Full removal | | With MeowTab installed, opened and granted both permissions, run `curl -fsSL https://raw.githubusercontent.com/tingtmu/mac_meowtab/main/scripts/meowtab/uninstall.sh \| bash` in Terminal. It prints one line per step, and no error. Then check that nothing is left. `ls /Applications/MeowTab.app`, `ls ~/Library/LaunchAgents/io.github.tingtmu.meowtab.macos.plist` and `ls ~/Library/Application\ Support/MeowTab` each say "No such file or directory". `defaults read io.github.tingtmu.meowtab.macos` fails ("does not exist"). In System Settings > Privacy & Security, MeowTab is in neither the Accessibility list (Device Control and Data Access on macOS 27) nor the Screen & System Audio Recording list (close and reopen the pane if it was open). If any of these fails, say which in Notes. |
+| 43 | mac-install-scripts | Fresh install of a candidate; Update; No published release yet | | Start from row 42's result, with no MeowTab installed. First run `curl -fsSL https://raw.githubusercontent.com/tingtmu/mac_meowtab/main/scripts/meowtab/install.sh \| bash` with no tag. While only pre-releases are published, it ends with an error that says to pass a tag, and `/Applications/MeowTab.app` does not exist. (If a release that isn't a pre-release exists by then, it installs that one: say so in Notes.) Then run `curl -fsSL https://raw.githubusercontent.com/tingtmu/mac_meowtab/main/scripts/meowtab/install.sh \| bash -s -- v0.1.0-rc.1`, with the candidate's tag in place of `v0.1.0-rc.1` if it differs. Its last line says "MeowTab <tag> is installed". MeowTab opens with no "Open Anyway" step and no macOS warning, and shows its permissions window: both permissions are asked for again. Grant them as INSTALL.md step 4 says. Last, run the same command with the tag once more, as an update: MeowTab quits and opens again, no permissions window appears, and the switcher shows pictures of the windows. |
+
 ## Timing
 
 Paste the output of `log stream --level debug --predicate 'category == "peek"'` from row 22, "Measuring on a real Mac" (20 openings with about 10 windows), and give the median and the maximum of its `update` times.
@@ -129,7 +138,7 @@ The owner copies the whole filled-in sheet to `docs/acceptance/<tag>.md`, for ex
 
 ## Cross-check
 
-For the owner; the tester can skip this. The table lists every scenario of the project's specs, plus `mac-release`, which joins them when the `mac-preview-release` change is archived; the specs and changes are kept in a separate planning repository that isn't published. Each is checked by a unit test, a CI job, a row of this sheet, or more than one of these. A `release step: tasks.md <n.n>` entry is a check the owner makes in that task of the `mac-preview-release` change, outside CI and this sheet.
+For the owner; the tester can skip this. The table lists every scenario of the project's specs, plus `mac-release` and `mac-install-scripts`, which join them when the `mac-preview-release` and `mac-easy-install` changes are archived; the specs and changes are kept in a separate planning repository that isn't published. Each is checked by a unit test, a CI job, a row of this sheet, or more than one of these. A `release step: tasks.md <n.n>` entry is a check the owner makes in that task of the `mac-preview-release` change, outside CI and this sheet. A `reading check` entry is made by reading the named document against the scenario.
 
 | Spec | Scenario | Checked by |
 |------|----------|------------|
@@ -188,5 +197,14 @@ For the owner; the tester can skip this. The table lists every scenario of the p
 | mac-release | One display only | row 20; release step: tasks.md 5.1 |
 | mac-release | Promoting rc.2 | release step: tasks.md 5.1 |
 | mac-release | Tester's screenshot | release step: tasks.md 5.1 |
+| mac-install-scripts | Fresh install of a candidate | CI: install-scripts.yml `check`, step "Fresh install"; row 43 |
+| mac-install-scripts | Update | CI: install-scripts.yml `check`, step "Update"; row 43 |
+| mac-install-scripts | No published release yet | row 43 |
+| mac-install-scripts | Tampered download | CI: install-scripts.yml `check`, step "Tampered download" |
+| mac-install-scripts | Wrong signer | CI: install-scripts.yml `check`, step "Wrong signer" |
+| mac-install-scripts | Reading the guide | reading check: docs/install.md, section "Quick install from Terminal" |
+| mac-install-scripts | Full removal | CI: install-scripts.yml `check`, step "Full removal"; row 42 |
+| mac-install-scripts | Nothing installed | CI: install-scripts.yml `check`, step "Nothing installed" |
+| mac-install-scripts | A script change | CI: install-scripts.yml `check` and `lint` |
 
 Rows 2–5, 10, 21, 23, 24 and 39 have no scenario of their own: they check INSTALL.md's permission steps, upstream switching, traffic after permissions, fullscreen Spaces, two more peek cases (another shortcut and the search hint) and VoiceOver in the MeowTab section.

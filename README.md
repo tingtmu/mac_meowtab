@@ -35,6 +35,12 @@ Releases are self-signed, not notarized, so macOS asks once the first time you o
 
 Unzip the download and move `MeowTab.app` into Applications. Open it: macOS says it was not opened, so click "Done", then click "Open Anyway" in System Settings > Privacy & Security. On macOS 14 and earlier, Control-click the app and choose "Open" instead. Then grant Accessibility, which MeowTab needs, and Screen Recording, which is optional: without it the switcher shows app icons instead of window previews.
 
+To install from Terminal instead, without the "Open Anyway" step, run the command below with the release's tag (needed while only test candidates are published). The guide's [Quick install from Terminal](docs/install.md#quick-install-from-terminal) section says why that works and how to read the script first.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tingtmu/mac_meowtab/main/scripts/meowtab/install.sh | bash -s -- v0.1.0-rc.1
+```
+
 [`docs/install.md`](docs/install.md) has the steps in full, and covers running beside AltTab, launch at login, updating and removing MeowTab. It ships in each zip as `INSTALL.md`.
 
 ## The peek
