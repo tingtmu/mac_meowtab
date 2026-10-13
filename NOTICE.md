@@ -9,7 +9,7 @@ MeowTab for Mac is a modified version of [AltTab](https://github.com/lwouis/alt-
 
 ## Modifications
 
-Listed by [OpenSpec](openspec/) change name. Later changes are appended here.
+Listed by OpenSpec change name. Later changes are appended here.
 
 ### mac-fork-baseline
 

@@ -22,3 +22,5 @@ codesign.p12
 /ai/output/
 # MeowTab: local agent instructions, not shared
 /CLAUDE.md
+# MeowTab: the plans, kept in their own local git repository
+/openspec/

@@ -6,7 +6,7 @@ AltTab and MeowTab are free software under the GNU General Public License v3.0 (
 
 ## Status
 
-In development. Test candidates for a real-Mac acceptance run are published as they're ready (see [Download](#download)), and the 0.1.0 preview follows once one passes. CI builds are ad-hoc-signed test builds: macOS forgets the Accessibility and Screen Recording permissions you grant on every new build, so they are not for daily use. The plan is in [`openspec/`](openspec/) and [`ROADMAP.md`](ROADMAP.md).
+In development. Test candidates for a real-Mac acceptance run are published as they're ready (see [Download](#download)), and the 0.1.0 preview follows once one passes. CI builds are ad-hoc-signed test builds: macOS forgets the Accessibility and Screen Recording permissions you grant on every new build, so they are not for daily use. The plan is in [`ROADMAP.md`](ROADMAP.md).
 
 ## What MeowTab adds
 

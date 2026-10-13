@@ -129,7 +129,7 @@ The owner copies the whole filled-in sheet to `docs/acceptance/<tag>.md`, for ex
 
 ## Cross-check
 
-For the owner; the tester can skip this. The table lists every scenario of the specs in `openspec/specs/`, plus `mac-release`, which joins them when the `mac-preview-release` change is archived. Each is checked by a unit test, a CI job, a row of this sheet, or more than one of these. A `release step: tasks.md <n.n>` entry is a check the owner makes in that task of the `mac-preview-release` change (`openspec/changes/mac-preview-release/tasks.md`), outside CI and this sheet.
+For the owner; the tester can skip this. The table lists every scenario of the project's specs, plus `mac-release`, which joins them when the `mac-preview-release` change is archived; the specs and changes are kept in a separate planning repository that isn't published. Each is checked by a unit test, a CI job, a row of this sheet, or more than one of these. A `release step: tasks.md <n.n>` entry is a check the owner makes in that task of the `mac-preview-release` change, outside CI and this sheet.
 
 | Spec | Scenario | Checked by |
 |------|----------|------------|
