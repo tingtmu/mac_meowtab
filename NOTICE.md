@@ -35,5 +35,5 @@ Listed by OpenSpec change name. Later changes are appended here.
 
 - **Scripts:** `scripts/meowtab/install.sh` and `scripts/meowtab/uninstall.sh` install, update and remove MeowTab with one Terminal command each. The install script checks the download's SHA-256, the app's signature and its designated requirement before it replaces anything.
 - **CI:** a new workflow, `.github/workflows/install-scripts.yml`, runs both scripts on macOS 15 and macOS 26 whenever either changes.
-- **Docs:** `docs/install.md` gains a "Quick install from Terminal" section, the README's Install section links it, and `docs/acceptance.md` gains rows 42 and 43.
+- **Docs:** `docs/install.md` gains a "Quick install from Terminal" section, which comes first, ahead of "Install by hand"; the README's Install section leads with the same command and puts the download by hand after it; and `docs/acceptance.md` gains rows 42 and 43.
 - **App:** unchanged.
