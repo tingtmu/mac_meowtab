@@ -111,7 +111,7 @@ To remove MeowTab, run:
 curl -fsSL https://raw.githubusercontent.com/tingtmu/mac_meowtab/main/scripts/meowtab/uninstall.sh | bash
 ```
 
-This removes everything: the app, its login item, your pictures and settings, and MeowTab's entries in the Accessibility and Screen Recording lists. To keep your pictures and settings, follow step 8 instead. The command may ask for your account password (`sudo`), which it needs to reset the Accessibility entry.
+This removes everything: the app, its login item, your pictures and settings, and MeowTab's entries in the Accessibility and Screen Recording lists. To keep your pictures and settings, follow step 8 instead. If macOS refuses to reset an entry, the command asks for your account password (`sudo`) and tries again.
 
 **Read the script first.** To read the install script before it runs, pipe it to `less` (press Q to leave):
 

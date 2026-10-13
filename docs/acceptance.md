@@ -104,7 +104,7 @@ These check AltTab's own behaviour, which MeowTab keeps.
 
 ### 6. Terminal install and uninstall
 
-Do these two rows last, after rows 1–41, so that rows 1–3 still test the browser download. Rows 1–41 leave MeowTab installed, opened and granted, which is row 42's starting state. The removal command may ask for your account password (`sudo`).
+Do these two rows last, after rows 1–41, so that rows 1–3 still test the browser download. Rows 1–41 leave MeowTab installed, opened and granted, which is row 42's starting state. The removal command asks for your account password (`sudo`) only if macOS refuses to reset a permission entry; if it asks, say so in Notes.
 
 | # | Spec | Scenario | Result | Notes |
 |---|------|----------|--------|-------|
