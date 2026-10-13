@@ -1,0 +1,274 @@
+name: Install scripts
+
+# Runs scripts/meowtab/install.sh and uninstall.sh on real Macs against a published release, one step per scenario of
+# the mac-install-scripts spec. Why: openspec/changes/mac-easy-install/design.md decision 6.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/meowtab/install.sh
+      - scripts/meowtab/uninstall.sh
+      - .github/workflows/install-scripts.yml
+      - docs/designated-requirement.txt
+  pull_request:
+    paths:
+      - scripts/meowtab/install.sh
+      - scripts/meowtab/uninstall.sh
+      - .github/workflows/install-scripts.yml
+      - docs/designated-requirement.txt
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to install (empty is the newest release, pre-releases included)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+# GitHub runs an explicit `shell: bash` as `bash -eo pipefail`, so a failure anywhere in a pipe fails the step.
+defaults:
+  run:
+    shell: bash
+
+env:
+  REPO: tingtmu/mac_meowtab
+  APP: /Applications/MeowTab.app
+  BIN: /Applications/MeowTab.app/Contents/MacOS/MeowTab
+  BUNDLE_ID: io.github.tingtmu.meowtab.macos
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint
+        run: |
+          bash -n scripts/meowtab/install.sh
+          bash -n scripts/meowtab/uninstall.sh
+          shellcheck scripts/meowtab/install.sh scripts/meowtab/uninstall.sh
+          # design.md decision 3: the script's requirement constant and the committed file can't drift.
+          if ! grep -qxF "REQUIREMENT='$(cat docs/designated-requirement.txt)'" scripts/meowtab/install.sh; then
+            echo "::error::install.sh has no line REQUIREMENT='<docs/designated-requirement.txt>' matching that file exactly"
+            exit 1
+          fi
+          echo "bash -n, shellcheck and the requirement constant are fine."
+
+  # A script that fails lint can't pass these scenarios either, and macOS minutes cost ten times Linux ones.
+  check:
+    needs: lint
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Resolve the tag and download the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          sw_vers
+          # The scripts run under /bin/bash, as a plain Terminal `curl | bash` does: macOS's bash 3.2.
+          /bin/bash --version | head -n 1
+          tag=$INPUT_TAG
+          if [ -z "$tag" ]; then
+            tag=$(gh release list -R "$REPO" --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName')
+          fi
+          tag_re='^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'
+          if [[ ! $tag =~ $tag_re ]]; then
+            echo "::error::tag '$tag' is neither vX.Y.Z nor vX.Y.Z-rc.N"
+            exit 1
+          fi
+          zip="MeowTab-$tag-mac.zip"
+          dir="$RUNNER_TEMP/release"
+          gh release download "$tag" -R "$REPO" -D "$dir" -p "$zip" -p SHA256SUMS.txt
+          # The scenarios below build their bad downloads from this one, so it must be good itself.
+          (cd "$dir" && shasum -a 256 -c SHA256SUMS.txt)
+          echo "Testing $tag."
+          { echo "TAG=$tag"; echo "ZIP=$zip"; echo "RELEASE_DIR=$dir"; } >> "$GITHUB_ENV"
+      - name: Nothing installed
+        run: |
+          log="$RUNNER_TEMP/nothing.log"
+          status=0
+          cat scripts/meowtab/uninstall.sh | /bin/bash > "$log" 2>&1 || status=$?
+          cat "$log"
+          if [ "$status" != 0 ]; then echo "::error::uninstall.sh exited $status on a Mac without MeowTab"; exit 1; fi
+          if ! grep -qF 'Nothing of MeowTab was found' "$log"; then echo "::error::uninstall.sh didn't say 'Nothing of MeowTab was found'"; exit 1; fi
+          echo "uninstall.sh exited 0 and said nothing was found."
+      - name: Fresh install
+        run: |
+          out="$RUNNER_TEMP/fresh.out"
+          status=0
+          cat scripts/meowtab/install.sh | /bin/bash -s -- "$TAG" > "$out" || status=$?
+          cat "$out"
+          if [ "$status" != 0 ]; then echo "::error::install.sh $TAG exited $status"; exit 1; fi
+          if [[ $(tail -n 1 "$out") != "MeowTab $TAG is installed"* ]]; then echo "::error::install.sh's last line isn't 'MeowTab $TAG is installed…'"; exit 1; fi
+          actual=$(codesign -d -r- "$APP")
+          echo "requirement: $actual"
+          if [ "$actual" != "$(cat docs/designated-requirement.txt)" ]; then echo "::error::that differs from docs/designated-requirement.txt"; exit 1; fi
+          for f in "$APP" "$BIN"; do
+            if xattr -p com.apple.quarantine "$f" > /dev/null 2>&1; then echo "::error::$f has a com.apple.quarantine attribute"; exit 1; fi
+            echo "no quarantine attribute on $f"
+          done
+          pid=
+          for _ in $(seq 15); do
+            pid=$(pgrep -x MeowTab | head -n 1 || true)
+            if [ -n "$pid" ]; then break; fi
+            sleep 1
+          done
+          if [ -z "$pid" ]; then echo "::error::MeowTab isn't running 15 s after install.sh"; exit 1; fi
+          sha=$(shasum -a 256 "$BIN" | cut -d ' ' -f 1)
+          inode=$(stat -f %i "$APP")
+          echo "MeowTab runs as $pid; executable sha256 $sha; bundle inode $inode"
+          { echo "PID=$pid"; echo "APP_SHA=$sha"; echo "APP_INODE=$inode"; } >> "$GITHUB_ENV"
+      - name: Update
+        run: |
+          status=0
+          cat scripts/meowtab/install.sh | /bin/bash -s -- "$TAG" || status=$?
+          if [ "$status" != 0 ]; then echo "::error::the second install.sh $TAG exited $status"; exit 1; fi
+          inode=$(stat -f %i "$APP")
+          if [ "$inode" = "$APP_INODE" ]; then echo "::error::$APP is the same directory (inode $inode), not replaced"; exit 1; fi
+          pid=
+          for _ in $(seq 15); do
+            pids=$(pgrep -x MeowTab || true)
+            if [ -n "$pids" ] && ! grep -qx "$PID" <<< "$pids"; then pid=$(head -n 1 <<< "$pids"); break; fi
+            sleep 1
+          done
+          if [ -z "$pid" ]; then echo "::error::no MeowTab other than the old process $PID is running 15 s after the update"; exit 1; fi
+          sha=$(shasum -a 256 "$BIN" | cut -d ' ' -f 1)
+          echo "replaced: bundle inode $APP_INODE -> $inode; process $PID -> $pid; executable sha256 $sha"
+          { echo "PID=$pid"; echo "APP_SHA=$sha"; echo "APP_INODE=$inode"; } >> "$GITHUB_ENV"
+      # Tampered download and Wrong signer serve a bad release from localhost and run the same check on it.
+      - name: Write the refusal check
+        run: |
+          cat > "$RUNNER_TEMP/refuse.sh" <<'EOF'
+          # refuse ROOT PORT KEYWORD serves ROOT on PORT, points install.sh at it, and fails the step unless install.sh
+          # exits non-zero with KEYWORD on stderr and leaves the installed app, and the MeowTab process, as they were.
+          refuse() {
+            local url="http://127.0.0.1:$2" err="$RUNNER_TEMP/refuse-$2.err" status=0 sha
+            python3 -m http.server --bind 127.0.0.1 "$2" --directory "$1" > "$RUNNER_TEMP/http-$2.log" 2>&1 &
+            SERVER=$!
+            trap 'kill "$SERVER" 2> /dev/null || true' EXIT
+            for _ in $(seq 20); do curl -fs -o /dev/null "$url/download/$TAG/SHA256SUMS.txt" && break; sleep 0.5; done
+            curl -fsS -o /dev/null "$url/download/$TAG/SHA256SUMS.txt" || { echo "::error::the local server doesn't answer"; exit 1; }
+            cat scripts/meowtab/install.sh | MEOWTAB_RELEASES_URL="$url" /bin/bash -s -- "$TAG" 2> "$err" || status=$?
+            cat "$err"
+            echo "--- requests the server saw ---"; cat "$RUNNER_TEMP/http-$2.log"
+            if [ "$status" = 0 ]; then echo "::error::install.sh installed the bad download"; exit 1; fi
+            if ! grep -qF "$3" "$err"; then echo "::error::install.sh exited $status, but its stderr doesn't say '$3'"; exit 1; fi
+            sha=$(shasum -a 256 "$BIN" | cut -d ' ' -f 1)
+            if [ "$sha" != "$APP_SHA" ] || [ "$(stat -f %i "$APP")" != "$APP_INODE" ]; then echo "::error::the installed app changed"; exit 1; fi
+            if ! kill -0 "$PID" 2> /dev/null; then echo "::error::the running MeowTab ($PID) was stopped"; exit 1; fi
+            echo "install.sh exited $status saying '$3'; the app and its process $PID are unchanged."
+          }
+          EOF
+      - name: Tampered download
+        run: |
+          root="$RUNNER_TEMP/tampered"
+          dir="$root/download/$TAG"
+          mkdir -p "$dir"
+          cp "$RELEASE_DIR/SHA256SUMS.txt" "$RELEASE_DIR/$ZIP" "$dir/"
+          # Add 1 to the byte in the middle of the zip.
+          off=$(( $(stat -f %z "$dir/$ZIP") / 2 ))
+          old=$(dd if="$dir/$ZIP" bs=1 skip="$off" count=1 2> /dev/null | od -An -tu1 | tr -d ' ')
+          printf "\\$(printf '%03o' $(( (old + 1) % 256 )))" | dd of="$dir/$ZIP" bs=1 seek="$off" count=1 conv=notrunc 2> /dev/null
+          diffs=$({ cmp -l "$RELEASE_DIR/$ZIP" "$dir/$ZIP" || true; } | wc -l | tr -d ' ')
+          if [ "$diffs" != 1 ]; then echo "::error::the tampered zip differs in $diffs bytes, not 1"; exit 1; fi
+          echo "byte $off changed from $old"
+          source "$RUNNER_TEMP/refuse.sh"
+          refuse "$root" 8701 'SHA-256'
+      - name: Wrong signer
+        run: |
+          root="$RUNNER_TEMP/resigned" work="$RUNNER_TEMP/resign"
+          dir="$root/download/$TAG" app="$RUNNER_TEMP/resign/MeowTab-$TAG/MeowTab.app"
+          mkdir -p "$dir" "$work"
+          ditto -x -k "$RELEASE_DIR/$ZIP" "$work"
+          codesign --force --deep --sign - "$app"
+          # The fixture must pass the signature check, so that only the requirement check can refuse it.
+          codesign --verify --deep --strict "$app" || { echo "::error::the ad hoc re-signed app doesn't verify, so this fixture is broken"; exit 1; }
+          echo "re-signed requirement: $(codesign -d -r- "$app")"
+          (cd "$work" && ditto -c -k --sequesterRsrc --keepParent "MeowTab-$TAG" "$dir/$ZIP")
+          (cd "$dir" && shasum -a 256 "$ZIP" > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          source "$RUNNER_TEMP/refuse.sh"
+          refuse "$root" 8702 'designated requirement'
+      # Full removal starts from an app that is installed, opened and granted (spec), with its login item written.
+      - name: Grant and reopen
+        run: |
+          sys_db="/Library/Application Support/com.apple.TCC/TCC.db"
+          now="CAST(strftime('%s','now') AS INTEGER)"
+          # As ci.yml's screenshot Grant step: one value per column this macOS's access table has, in its order.
+          cols=$(sudo sqlite3 "$sys_db" "PRAGMA table_info(access);" | cut -d'|' -f2 | tr '\n' ' ' || true)
+          echo "access columns: $cols"
+          if [ -z "$cols" ]; then echo "::error::can't read the system TCC.db, so there is nothing to grant"; exit 1; fi
+          grant() {
+            local names="" values="" col val
+            for col in $cols; do
+              case $col in
+                service) val="'$1'" ;;
+                client) val="'$BUNDLE_ID'" ;;
+                client_type|indirect_object_identifier_type|flags) val=0 ;;
+                auth_value) val=2 ;;
+                auth_reason) val=4 ;;
+                auth_version) val=1 ;;
+                indirect_object_identifier|boot_uuid) val="'UNUSED'" ;;
+                csreq|policy_id|indirect_object_code_identity|pid|pid_version) val=NULL ;;
+                last_modified|last_reminded) val=$now ;;
+                *) continue ;;
+              esac
+              names="$names${names:+, }$col"
+              values="$values${values:+, }$val"
+            done
+            sudo sqlite3 -cmd ".timeout 5000" "$sys_db" "INSERT OR REPLACE INTO access ($names) VALUES ($values);"
+          }
+          grant kTCCServiceAccessibility
+          grant kTCCServiceScreenCapture
+          sudo pkill -9 tccd || true
+          sleep 2
+          echo "--- rows for $BUNDLE_ID ---"
+          sudo sqlite3 -header -cmd ".mode quote" "$sys_db" "SELECT * FROM access WHERE client = '$BUNDLE_ID';"
+          pkill -x MeowTab || true
+          for _ in $(seq 10); do pgrep -x MeowTab > /dev/null || break; sleep 1; done
+          open "$APP"
+          plist="$HOME/Library/LaunchAgents/$BUNDLE_ID.plist"
+          for _ in $(seq 20); do [ -f "$plist" ] && break; sleep 1; done
+          if [ ! -f "$plist" ]; then
+            echo "::error::$plist didn't appear within 20 s of reopening, so the grants didn't take or Start at login is off"
+            exit 1
+          fi
+          echo "login item: $plist"
+          found=
+          for d in "$BUNDLE_ID" "$BUNDLE_ID.license" "$BUNDLE_ID.usage"; do defaults read "$d" > /dev/null 2>&1 && found="$found $d"; done
+          if [ -z "$found" ]; then echo "::error::none of MeowTab's preference domains exists"; exit 1; fi
+          echo "preference domains:$found"
+      - name: Full removal
+        run: |
+          log="$RUNNER_TEMP/removal.log"
+          status=0
+          cat scripts/meowtab/uninstall.sh | /bin/bash > "$log" 2>&1 || status=$?
+          cat "$log"
+          # design.md's Open Question.
+          answer=no
+          if grep -qF 'needed sudo' "$log"; then answer="yes ($(grep -F 'needed sudo' "$log" | tr '\n' ' '))"; fi
+          echo "macOS $(sw_vers -productVersion): tccutil reset needed sudo: $answer" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" != 0 ]; then echo "::error::uninstall.sh exited $status"; exit 1; fi
+          fail() { echo "::error::$1"; status=1; }
+          for p in "$APP" "$HOME/Applications/MeowTab.app" "$HOME/Library/LaunchAgents/$BUNDLE_ID.plist" "$HOME/Library/Application Support/MeowTab"; do
+            if [ -e "$p" ]; then fail "$p is still there"; else echo "gone: $p"; fi
+          done
+          for d in "$BUNDLE_ID" "$BUNDLE_ID.license" "$BUNDLE_ID.usage"; do
+            if defaults read "$d" > /dev/null 2>&1; then fail "preference domain $d is still there"; else echo "gone: domain $d"; fi
+          done
+          if pgrep -x MeowTab; then fail "MeowTab is still running"; else echo "no MeowTab process"; fi
+          # The spec's two permission lists; other services' rows, which the script doesn't reset, are only shown.
+          for db in "/Library/Application Support/com.apple.TCC/TCC.db" "$HOME/Library/Application Support/com.apple.TCC/TCC.db"; do
+            if ! sudo test -f "$db"; then echo "no $db"; continue; fi
+            n=$(sudo sqlite3 -readonly -cmd ".timeout 5000" "$db" "SELECT COUNT(*) FROM access WHERE client = '$BUNDLE_ID' AND service IN ('kTCCServiceAccessibility', 'kTCCServiceScreenCapture');")
+            if [ "$n" != 0 ]; then fail "$db still has $n Accessibility/Screen Recording row(s) for $BUNDLE_ID"; else echo "no rows in $db"; fi
+            other=$(sudo sqlite3 -readonly -cmd ".timeout 5000" "$db" "SELECT service FROM access WHERE client = '$BUNDLE_ID';")
+            if [ -n "$other" ]; then echo "::warning::$db has other rows for $BUNDLE_ID: $other"; fi
+          done
+          exit "$status"
