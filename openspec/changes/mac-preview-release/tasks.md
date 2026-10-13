@@ -6,12 +6,12 @@ Starts after `mac-png-peek` is archived. Groups 1–3 are checked by CI and by r
 
 - [x] 1.1 Add the optional third argument (`CN`, default `Local Self-Signed`) and fourth argument (validity in days, default 30, openssl's own default) to `scripts/codesign/generate_selfsigned_certificate.sh`. Verify: `bash -n` passes; with two arguments the generated `.conf` is byte-identical to upstream's and the certificate lasts 30 days; with `"MeowTab for Mac" 3650` its CN is `MeowTab for Mac` and it lasts 10 years.
 - [x] 1.2 **Owner only; no agent handles the password.** Generate the certificate and set the two secrets (design.md 1). Verify: `gh secret list` shows `MEOWTAB_CERT_P12` and `MEOWTAB_CERT_PASSWORD`, and no `codesign.*` file is tracked (`git status`).
-- [ ] 1.3 Add `scripts/meowtab/setup_release_signing.sh` (design.md 1). Verify: through task 2.2's dry run.
+- [x] 1.3 Add `scripts/meowtab/setup_release_signing.sh` (design.md 1). Verify: through task 2.2's dry run.
 
 ## 2. Build script and release workflow
 
 - [x] 2.1 Move the `build` job's steps into `scripts/meowtab/build.sh <identity>`, have `ci.yml` call it with `-`, and add `on: workflow_call` to `ci.yml`. Verify: CI on `main` is green with the same checks as before.
-- [ ] 2.2 Add `.github/workflows/release.yml` and `docs/release-notes-template.md` (design.md 2). Verify, with a `workflow_dispatch` dry run:
+- [x] 2.2 Add `.github/workflows/release.yml` and `docs/release-notes-template.md` (design.md 2). Verify, with a `workflow_dispatch` dry run:
   - the signed zip and `SHA256SUMS.txt` arrive as artifacts;
   - the log prints the designated requirement; commit it as `docs/designated-requirement.txt`;
   - a second dry run passes the requirement check.
