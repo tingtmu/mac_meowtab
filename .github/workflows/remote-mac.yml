@@ -60,12 +60,18 @@ jobs:
           fi
           # Legacy VNC uses only the first 8 characters, which the full secret's mask doesn't cover.
           echo "::add-mask::${pw:0:8}"
-          # macOS asks for an admin password at Gatekeeper's Open Anyway and when a permission is switched on, and the
-          # runner's own password is unknown.
-          if ! sudo dscl . -passwd "/Users/$USER" "$pw"; then
-            echo "::error::couldn't set the password of $USER"
+          # macOS asks for an admin's name and password at Gatekeeper's Open Anyway and when a permission is switched on.
+          # The runner's own password is unknown and can't be reset (macOS asks for the old one), so the tester signs
+          # those prompts as a second admin. The session itself stays the runner's own desktop.
+          # sysadminctl can exit 0 without creating the user, so the admin group membership decides.
+          sudo sysadminctl -addUser meowtester -fullName "MeowTab tester" -password "$pw" -admin || true
+          if ! dseditgroup -o checkmember -m meowtester admin > /dev/null 2>&1; then
+            echo "::error::couldn't create the admin user meowtester"
             exit 1
           fi
+          # Only the runner's unknown password unlocks its screen, so the screen must never sleep or lock.
+          sudo pmset -a displaysleep 0 sleep 0 || true
+          defaults -currentHost write com.apple.screensaver idleTime -int 0 || true
           ks=/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart
           # Recent macOS refuses parts of kickstart, so its failures are only logged: the listener check below decides.
           sudo "$ks" -activate -configure -access -on -privs -all || echo "kickstart -activate failed"
@@ -142,8 +148,10 @@ jobs:
             exit 1
           fi
           echo "VNC viewer address: $ip:5900 (the Tailscale IP, so MagicDNS isn't needed)"
-          echo "Login user: $USER"
-          echo "Password: the REMOTE_MAC_PASSWORD secret. A VNC password prompt takes its first 8 characters."
+          echo "VNC password: the first 8 characters of the REMOTE_MAC_PASSWORD secret."
+          echo "Use a viewer that asks only for a password (e.g. TigerVNC), not one that signs in with a macOS account."
+          echo "The desktop is $USER's. When macOS asks for an admin (Open Anyway, permission switches), replace the"
+          echo "prefilled user name with meowtester and enter the whole REMOTE_MAC_PASSWORD secret."
           echo "The session lasts $MINUTES minutes. Cancel this run to end it early."
       - name: Hold the session
         if: inputs.connect == true
