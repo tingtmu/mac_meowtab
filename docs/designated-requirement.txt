@@ -1,0 +1,1 @@
+designated => identifier "io.github.tingtmu.meowtab.macos" and certificate leaf = H"415685b6efeaeaadb016e15b3d09887b5ae5999e"

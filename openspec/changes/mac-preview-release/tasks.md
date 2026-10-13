@@ -10,7 +10,7 @@ Starts after `mac-png-peek` is archived. Groups 1–3 are checked by CI and by r
 
 ## 2. Build script and release workflow
 
-- [ ] 2.1 Move the `build` job's steps into `scripts/meowtab/build.sh <identity>`, have `ci.yml` call it with `-`, and add `on: workflow_call` to `ci.yml`. Verify: CI on `main` is green with the same checks as before.
+- [x] 2.1 Move the `build` job's steps into `scripts/meowtab/build.sh <identity>`, have `ci.yml` call it with `-`, and add `on: workflow_call` to `ci.yml`. Verify: CI on `main` is green with the same checks as before.
 - [ ] 2.2 Add `.github/workflows/release.yml` and `docs/release-notes-template.md` (design.md 2). Verify, with a `workflow_dispatch` dry run:
   - the signed zip and `SHA256SUMS.txt` arrive as artifacts;
   - the log prints the designated requirement; commit it as `docs/designated-requirement.txt`;
